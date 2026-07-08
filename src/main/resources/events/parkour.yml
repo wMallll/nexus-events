@@ -1,0 +1,71 @@
+# ============================================================
+#  NexusEvents - Parkour Colapsable
+#
+#  La region del recorrido se define con /evento setparkour
+#  (debe abarcar todo el parkour). El spawn de la arena marca el
+#  INICIO del recorrido: el colapso avanza desde alli siguiendo
+#  la forma real del parkour, aunque sea curvo.
+#
+#  Duraciones: aceptan sufijos t (ticks), s, m, h.
+# ============================================================
+
+settings:
+  # Ventaja inicial antes de que empiece el colapso.
+  start-delay: "10s"
+
+  # Duracion maxima del evento. Si nadie gana antes, los que
+  # sigan en pie ganan por supervivencia.
+  max-duration: "5m"
+
+  # Si es true, el evento termina cuando queda un unico jugador
+  # vivo (ganador). Con false, solo termina por tiempo.
+  win-when-one-remains: true
+
+  # Bloques por debajo del recorrido a partir de los cuales un
+  # jugador cuenta como caido.
+  fall-distance: 4
+
+# --- Motor de colapso (optimizado: el recorrido desaparece en
+#     lotes pequenos a intervalos, nunca todo en un mismo tick) ---
+collapse:
+  # Cada cuanto se elimina un lote de bloques.
+  interval: "5t"
+
+  # Bloques eliminados por lote al comenzar.
+  blocks-per-step: 4
+
+  # Aceleracion: cada este tiempo, el lote crece en la cantidad
+  # indicada, hasta el tope. (0 en cualquiera = sin aceleracion)
+  speed-up-every: "15s"
+  speed-up-amount: 2
+  max-blocks-per-step: 40
+
+  # Sonido en el frente de colapso (clave de sounds.yml:
+  # parkour-collapse), audible dentro del radio indicado.
+  sound:
+    enabled: true
+    radius: 24
+
+titles:
+  # Aviso en los ultimos 3 segundos previos al colapso.
+  # Placeholder: <seconds>
+  warning:
+    title: "<yellow><bold><seconds>"
+    subtitle: "<gray>El recorrido empieza a colapsar..."
+    fade-in: 0
+    stay: 25
+    fade-out: 5
+    enabled: true
+  start:
+    title: "<red><bold>¡COLAPSO!"
+    subtitle: "<gray>¡Corré por tu vida!"
+    fade-in: 0
+    stay: 40
+    fade-out: 10
+    enabled: true
+
+# Contador visible (actionbar, cada segundo).
+# Placeholders: <time>, <progress> (% colapsado), <alive>
+actionbar:
+  waiting: "<gray>El colapso comienza en <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>"
+  collapsing: "<gray>Colapsado: <red><progress>% <dark_gray>| <gray>Vivos: <green><alive> <dark_gray>| <gray>Tiempo: <yellow><time>"

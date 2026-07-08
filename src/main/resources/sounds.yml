@@ -80,3 +80,9 @@ sounds:
     volume: 1.0
     pitch: 0.8
     enabled: true
+
+  parkour-collapse:
+    sound: BLOCK_STONE_BREAK
+    volume: 0.8
+    pitch: 0.7
+    enabled: true

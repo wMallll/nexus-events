@@ -206,7 +206,7 @@ public final class PixelPartySession extends EventSession {
             }
         }
         platform.forEachBlock(block ->
-                XBlock.setType(block, config.getPalette().get(colorIndexAt(block.getX(), block.getZ())).getMaterial()));
+                XBlock.setType(block, config.getPalette().get(colorIndexAt(block.getX(), block.getZ())).getMaterial(), false));
     }
 
     private void clearWrongBlocks() {

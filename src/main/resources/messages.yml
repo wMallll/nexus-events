@@ -132,6 +132,15 @@ event:
       - ""
       - "<prefix><gold><bold>¡Fin del tiempo!</bold> <gray>Ganadores: <yellow><winners>"
       - ""
+  parkour:
+    collapse-start: "<prefix><red><bold>¡El recorrido está colapsando desde el inicio!"
+    eliminated-info:
+      - "<prefix><red>¡Caíste! Quedaste eliminado."
+      - "<prefix><gray>Ahora sos invisible y podés volar para mirar el evento."
+    winners:
+      - ""
+      - "<prefix><gold><bold>¡Fin del tiempo!</bold> <gray>Sobrevivientes del colapso: <yellow><winners>"
+      - ""
 
 help:
   header:
