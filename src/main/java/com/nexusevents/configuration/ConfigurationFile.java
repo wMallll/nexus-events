@@ -6,6 +6,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 
 /**
@@ -39,6 +42,36 @@ public final class ConfigurationFile {
             createDefaults();
         }
         this.configuration = YamlConfiguration.loadConfiguration(file);
+        mergeMissingDefaults();
+    }
+
+    /**
+     * Agrega al archivo del usuario las claves que existan en el
+     * recurso embebido del jar y falten en disco (por ejemplo, tras
+     * actualizar el plugin), sin tocar los valores ya editados.
+     * Solo escribe si detecto claves nuevas.
+     */
+    private void mergeMissingDefaults() {
+        InputStream resource = plugin.getResource(fileName);
+        if (resource == null) {
+            return;
+        }
+        YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                new InputStreamReader(resource, StandardCharsets.UTF_8));
+        boolean changed = false;
+        for (String key : defaults.getKeys(true)) {
+            if (defaults.isConfigurationSection(key)) {
+                continue;
+            }
+            if (!configuration.contains(key)) {
+                configuration.set(key, defaults.get(key));
+                changed = true;
+            }
+        }
+        if (changed) {
+            save();
+            plugin.getLogger().info("Se agregaron claves nuevas de esta version a " + fileName + ".");
+        }
     }
 
     private void createDefaults() {

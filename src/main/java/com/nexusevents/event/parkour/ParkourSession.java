@@ -293,7 +293,7 @@ public final class ParkourSession extends EventSession {
     }
 
     @Override
-    public boolean allowDamage(Player player) {
+    public boolean allowDamage(Player player, org.bukkit.event.entity.EntityDamageEvent event) {
         return false;
     }
 }

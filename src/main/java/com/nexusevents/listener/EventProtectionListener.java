@@ -35,7 +35,7 @@ public final class EventProtectionListener implements Listener {
         }
         Player player = (Player) event.getEntity();
         sessionOf(player).ifPresent(session -> {
-            if (!session.allowDamage(player)) {
+            if (!session.allowDamage(player, event)) {
                 event.setCancelled(true);
             }
         });

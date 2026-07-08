@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -447,13 +448,16 @@ public abstract class EventSession {
     }
 
     /**
-     * Indica si el jugador puede recibir dano en el estado actual.
-     * Por defecto solo durante RUNNING.
+     * Indica si el jugador puede recibir el dano dado en el estado
+     * actual. Por defecto solo durante RUNNING. Los eventos pueden
+     * inspeccionar la causa (por ejemplo, El Circulo permite unicamente
+     * su propio dano de zona y bloquea PvP y caidas).
      *
      * @param player jugador participante.
+     * @param event  evento de dano original.
      * @return true si el dano esta permitido.
      */
-    public boolean allowDamage(Player player) {
+    public boolean allowDamage(Player player, EntityDamageEvent event) {
         return state == EventState.RUNNING;
     }
 

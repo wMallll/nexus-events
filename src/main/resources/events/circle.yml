@@ -1,0 +1,62 @@
+# ============================================================
+#  NexusEvents - El Circulo que se cierra
+#
+#  El centro se define en el juego con /evento setcircle.
+#  El spawn de la arena debe quedar dentro del radio inicial.
+#  Duraciones: aceptan sufijos t (ticks), s, m, h.
+# ============================================================
+
+settings:
+  # Tiempo antes de que el circulo empiece a cerrarse.
+  start-delay: "10s"
+
+  # Duracion maxima del evento. Si el circulo llega al minimo y
+  # quedan varios vivos, ganan por supervivencia al agotarse.
+  max-duration: "5m"
+
+  # Radio inicial y minimo del circulo (en bloques).
+  initial-radius: 30.0
+  min-radius: 3.0
+
+  # Cuantos bloques se reduce el radio por segundo.
+  shrink-per-second: 0.25
+
+  # Dano por segundo a quien queda fuera (2.0 = 1 corazon).
+  # El plugin nunca deja morir al jugador: cuando el dano lo
+  # mataria, lo elimina directamente (sin drops ni respawn).
+  damage-per-second: 2.0
+
+# Borde visual del circulo.
+particles:
+  enabled: true
+  # Nombre de la particula segun la version del servidor
+  # (FLAME existe en todas). Si no existe, se desactiva el borde.
+  type: FLAME
+  # Puntos por anillo (mas puntos = borde mas denso).
+  points: 60
+  # Cantidad de anillos apilados en altura.
+  rings: 2
+
+titles:
+  # Aviso en los ultimos 3 segundos previos al cierre.
+  # Placeholder: <seconds>
+  warning:
+    title: "<yellow><bold><seconds>"
+    subtitle: "<gray>El círculo empieza a cerrarse..."
+    fade-in: 0
+    stay: 25
+    fade-out: 5
+    enabled: true
+  shrink-start:
+    title: "<red><bold>¡EL CÍRCULO SE CIERRA!"
+    subtitle: "<gray>Mantenete adentro"
+    fade-in: 0
+    stay: 40
+    fade-out: 10
+    enabled: true
+
+# Contador visible (actionbar, cada segundo).
+# Placeholders: <radius>, <alive>, <time>
+actionbar:
+  inside: "<gray>Radio: <yellow><radius> <dark_gray>| <gray>Vivos: <green><alive> <dark_gray>| <gray>Tiempo: <yellow><time>"
+  outside: "<red><bold>¡ESTÁS FUERA DEL CÍRCULO!</bold> <gray>Radio: <yellow><radius>"

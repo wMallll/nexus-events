@@ -141,6 +141,15 @@ event:
       - ""
       - "<prefix><gold><bold>¡Fin del tiempo!</bold> <gray>Sobrevivientes del colapso: <yellow><winners>"
       - ""
+  circle:
+    shrink-start: "<prefix><red><bold>¡El círculo empezó a cerrarse! <gray>Mantenete adentro."
+    eliminated-info:
+      - "<prefix><red>El círculo pudo contigo. Quedaste eliminado."
+      - "<prefix><gray>Ahora sos invisible y podés volar para mirar el evento."
+    winners:
+      - ""
+      - "<prefix><gold><bold>¡Fin del tiempo!</bold> <gray>Sobrevivientes del círculo: <yellow><winners>"
+      - ""
 
 help:
   header:

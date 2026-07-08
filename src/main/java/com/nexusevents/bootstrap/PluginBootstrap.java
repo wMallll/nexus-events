@@ -21,6 +21,7 @@ import com.nexusevents.command.sub.setup.SetRegionSubCommand;
 import com.nexusevents.compatibility.ServerVersion;
 import com.nexusevents.configuration.ConfigManager;
 import com.nexusevents.event.EventManager;
+import com.nexusevents.event.circle.CircleEvent;
 import com.nexusevents.event.hideandseek.HideAndSeekEvent;
 import com.nexusevents.event.parkour.ParkourEvent;
 import com.nexusevents.event.pixelparty.PixelPartyEvent;
@@ -102,6 +103,7 @@ public final class PluginBootstrap {
         eventManager.register(new HideAndSeekEvent(configManager, plugin.getLogger()));
         eventManager.register(new PixelPartyEvent(configManager, plugin.getLogger()));
         eventManager.register(new ParkourEvent(configManager, plugin.getLogger()));
+        eventManager.register(new CircleEvent(configManager, plugin.getLogger()));
 
         registerArenaCommands(commandManager, arenaManager, messageService, soundService);
         registerEventCommands(commandManager, eventManager, messageService, soundService);
