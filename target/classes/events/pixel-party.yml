@@ -1,0 +1,84 @@
+# ============================================================
+#  NexusEvents - Pixel Party
+#
+#  La plataforma se define en el juego con /evento setpixelparty
+#  (idealmente una region plana de 1 bloque de alto).
+#  Duraciones: aceptan sufijos t (ticks), s, m, h.
+# ============================================================
+
+settings:
+  # Duracion total del evento. Al terminar, TODOS los que siguen
+  # en pie ganan (el evento nunca termina por ultimo jugador).
+  max-duration: "4m"
+
+  # Tamano del mosaico de color (3 = cuadrados de 3x3 bloques).
+  tile-size: 3
+
+  # Tiempo para encontrar el color en la primera ronda, minimo
+  # posible, y cuanto se reduce por ronda (dificultad creciente).
+  round-time-start: "8s"
+  round-time-min: "2s"
+  round-time-decrease: "1s"
+
+  # Pausa entre rondas (la plataforma se repinta al terminar).
+  pause-between-rounds: "4s"
+
+  # Bloques por debajo de la plataforma a partir de los cuales
+  # un jugador cuenta como caido.
+  fall-distance: 4
+
+  # Entrega el bloque del color objetivo en la hotbar.
+  give-target-item: true
+
+# Paleta de colores. Materiales con nomenclatura moderna
+# (se traducen a lana con data values en 1.9 - 1.12).
+# 'color' es el tag MiniMessage usado en titulos y actionbar.
+palette:
+  - material: RED_WOOL
+    name: "Rojo"
+    color: "<red>"
+  - material: ORANGE_WOOL
+    name: "Naranja"
+    color: "<gold>"
+  - material: YELLOW_WOOL
+    name: "Amarillo"
+    color: "<yellow>"
+  - material: LIME_WOOL
+    name: "Verde"
+    color: "<green>"
+  - material: LIGHT_BLUE_WOOL
+    name: "Celeste"
+    color: "<aqua>"
+  - material: BLUE_WOOL
+    name: "Azul"
+    color: "<blue>"
+  - material: PURPLE_WOOL
+    name: "Violeta"
+    color: "<dark_purple>"
+  - material: PINK_WOOL
+    name: "Rosa"
+    color: "<light_purple>"
+
+titles:
+  # Placeholders: <color> (tag), <colorname>, <round>
+  color:
+    title: "<color><bold><colorname>"
+    subtitle: "<gray>¡Buscá ese color!"
+    fade-in: 0
+    stay: 30
+    fade-out: 5
+    enabled: true
+  cleared:
+    title: "<red><bold>¡AHORA!"
+    subtitle: "<gray>Los bloques incorrectos desaparecieron"
+    fade-in: 0
+    stay: 20
+    fade-out: 5
+    enabled: true
+
+# Contador visible (actionbar, cada segundo).
+# Placeholders: <round>, <color>, <colorname>, <time> (fase),
+# <total> (tiempo restante del evento), <alive>
+actionbar:
+  showing: "<gray>Ronda <yellow><round> <dark_gray>| <color><bold><colorname></bold> <dark_gray>| <gray>Tiempo: <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>"
+  pause: "<gray>Ronda <yellow><round> <dark_gray>| <gray>Siguiente color en <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>"

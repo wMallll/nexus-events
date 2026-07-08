@@ -1,0 +1,82 @@
+# ============================================================
+#  NexusEvents - Sonidos
+#
+#  Cada clave es un sonido logico usado por el plugin. Podes usar:
+#
+#  Formato completo:
+#    clave:
+#      sound: ENTITY_EXPERIENCE_ORB_PICKUP   # Nombre moderno del sonido
+#      volume: 1.0
+#      pitch: 1.2
+#      enabled: true
+#
+#  Formato abreviado (volumen 1.0, pitch 1.0):
+#    clave: ENTITY_EXPERIENCE_ORB_PICKUP
+#
+#  Los nombres se escriben con la nomenclatura moderna y el plugin los
+#  traduce automaticamente a la version del servidor (desde 1.9).
+#  Lista de nombres: https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Sound.html
+# ============================================================
+
+sounds:
+  command-success:
+    sound: ENTITY_EXPERIENCE_ORB_PICKUP
+    volume: 1.0
+    pitch: 1.4
+    enabled: true
+
+  command-error:
+    sound: ENTITY_VILLAGER_NO
+    volume: 1.0
+    pitch: 0.9
+    enabled: true
+
+  countdown-tick:
+    sound: BLOCK_NOTE_BLOCK_HAT
+    volume: 1.0
+    pitch: 1.0
+    enabled: true
+
+  countdown-final:
+    sound: BLOCK_NOTE_BLOCK_PLING
+    volume: 1.0
+    pitch: 1.6
+    enabled: true
+
+  event-start:
+    sound: ENTITY_ENDER_DRAGON_GROWL
+    volume: 0.7
+    pitch: 1.2
+    enabled: true
+
+  event-win:
+    sound: UI_TOAST_CHALLENGE_COMPLETE
+    volume: 1.0
+    pitch: 1.0
+    enabled: true
+
+  player-eliminated:
+    sound: ENTITY_LIGHTNING_BOLT_THUNDER
+    volume: 0.6
+    pitch: 1.4
+    enabled: true
+
+  player-join-event:
+    sound: BLOCK_NOTE_BLOCK_BELL
+    volume: 1.0
+    pitch: 1.2
+    enabled: true
+
+  teleport: ENTITY_ENDERMAN_TELEPORT
+
+  pixel-color:
+    sound: BLOCK_NOTE_BLOCK_PLING
+    volume: 1.0
+    pitch: 1.3
+    enabled: true
+
+  pixel-clear:
+    sound: ENTITY_CHICKEN_EGG
+    volume: 1.0
+    pitch: 0.8
+    enabled: true

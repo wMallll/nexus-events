@@ -1,0 +1,104 @@
+name: NexusEvents
+version: '${project.version}'
+main: com.nexusevents.NexusEventsPlugin
+description: Plugin profesional de eventos multi-arena para Minecraft.
+authors: [NexusEvents]
+
+# En 1.13+ activa el modo moderno; en 1.9 - 1.12 esta clave se ignora
+# y el plugin carga igual (las versiones antiguas descartan claves desconocidas).
+api-version: '1.13'
+
+softdepend:
+  - PlaceholderAPI
+  - LuckPerms
+  - Vault
+  - WorldEdit
+  - ProtocolLib
+
+commands:
+  evento:
+    description: Comando principal de NexusEvents.
+    aliases: [eventos, nexusevents]
+    usage: /evento help
+
+permissions:
+  evento.admin:
+    description: Acceso total a NexusEvents.
+    default: op
+    children:
+      evento.use: true
+      evento.reload: true
+      evento.version: true
+      evento.arena.create: true
+      evento.arena.delete: true
+      evento.arena.list: true
+      evento.arena.edit: true
+      evento.setup.setspawn: true
+      evento.setup.setlobby: true
+      evento.setup.sethunterspawn: true
+      evento.setup.setcircle: true
+      evento.setup.setpixelparty: true
+      evento.setup.setparkour: true
+      evento.setup.save: true
+      evento.start: true
+      evento.stop: true
+      evento.join: true
+      evento.leave: true
+      evento.events: true
+  evento.use:
+    description: Permite usar /evento y ver la ayuda.
+    default: op
+  evento.reload:
+    description: Permite recargar la configuracion del plugin.
+    default: op
+  evento.version:
+    description: Permite ver la version del plugin.
+    default: op
+  evento.arena.create:
+    description: Permite crear arenas.
+    default: op
+  evento.arena.delete:
+    description: Permite eliminar arenas.
+    default: op
+  evento.arena.list:
+    description: Permite listar las arenas.
+    default: op
+  evento.arena.edit:
+    description: Permite seleccionar e inspeccionar arenas.
+    default: op
+  evento.setup.setspawn:
+    description: Permite fijar el spawn del evento.
+    default: op
+  evento.setup.setlobby:
+    description: Permite fijar el lobby.
+    default: op
+  evento.setup.sethunterspawn:
+    description: Permite fijar el spawn del cazador.
+    default: op
+  evento.setup.setcircle:
+    description: Permite fijar el centro del circulo.
+    default: op
+  evento.setup.setpixelparty:
+    description: Permite definir la plataforma de Pixel Party.
+    default: op
+  evento.setup.setparkour:
+    description: Permite definir la zona de Parkour.
+    default: op
+  evento.setup.save:
+    description: Permite guardar todas las arenas.
+    default: op
+  evento.start:
+    description: Permite iniciar eventos.
+    default: op
+  evento.stop:
+    description: Permite detener eventos.
+    default: op
+  evento.join:
+    description: Permite entrar a eventos activos.
+    default: true
+  evento.leave:
+    description: Permite salir de un evento.
+    default: true
+  evento.events:
+    description: Permite listar los eventos disponibles y activos.
+    default: op

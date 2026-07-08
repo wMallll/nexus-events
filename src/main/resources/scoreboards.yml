@@ -1,0 +1,82 @@
+# ============================================================
+#  NexusEvents - Scoreboards
+#
+#  Cada plantilla define el scoreboard de un evento. Los textos
+#  soportan legacy (&a), HEX (&#RRGGBB) y MiniMessage.
+#
+#  Placeholders disponibles (los resuelve cada evento):
+#    <event>      Nombre del evento
+#    <arena>      Nombre de la arena
+#    <players>    Jugadores vivos
+#    <spectators> Jugadores eliminados
+#    <time>       Tiempo restante (mm:ss)
+#    <round>      Ronda actual
+#    <state>      Estado del evento
+#
+#  update-interval-ticks puede definirse por plantilla; si no,
+#  se usa el valor global de settings.
+# ============================================================
+
+settings:
+  update-interval-ticks: 10
+
+scoreboards:
+  lobby:
+    title: "<gradient:#00E5FF:#2E6BFF><bold>EVENTOS</bold></gradient>"
+    lines:
+      - ""
+      - "<gray>Evento: <yellow><event>"
+      - "<gray>Arena: <yellow><arena>"
+      - "<gray>Jugadores: <yellow><players>"
+      - ""
+      - "<gray>Estado: <yellow><state>"
+      - ""
+      - "<aqua>play.tuservidor.com"
+
+  hide-and-seek:
+    title: "<gradient:#FFB300:#FF6D00><bold>ESCONDITE</bold></gradient>"
+    lines:
+      - ""
+      - "<gray>Arena: <yellow><arena>"
+      - "<gray>Vivos: <green><players>"
+      - "<gray>Eliminados: <red><spectators>"
+      - ""
+      - "<gray>Tiempo: <yellow><time>"
+      - ""
+      - "<aqua>play.tuservidor.com"
+
+  pixel-party:
+    title: "<gradient:#FF4081:#7C4DFF><bold>PIXEL PARTY</bold></gradient>"
+    lines:
+      - ""
+      - "<gray>Arena: <yellow><arena>"
+      - "<gray>Ronda: <yellow><round>"
+      - "<gray>Vivos: <green><players>"
+      - ""
+      - "<gray>Tiempo: <yellow><time>"
+      - ""
+      - "<aqua>play.tuservidor.com"
+
+  parkour:
+    title: "<gradient:#00E676:#00B0FF><bold>PARKOUR</bold></gradient>"
+    lines:
+      - ""
+      - "<gray>Arena: <yellow><arena>"
+      - "<gray>Vivos: <green><players>"
+      - "<gray>Eliminados: <red><spectators>"
+      - ""
+      - "<gray>Tiempo: <yellow><time>"
+      - ""
+      - "<aqua>play.tuservidor.com"
+
+  circle:
+    title: "<gradient:#FF1744:#FF9100><bold>EL CIRCULO</bold></gradient>"
+    lines:
+      - ""
+      - "<gray>Arena: <yellow><arena>"
+      - "<gray>Vivos: <green><players>"
+      - "<gray>Eliminados: <red><spectators>"
+      - ""
+      - "<gray>Tiempo: <yellow><time>"
+      - ""
+      - "<aqua>play.tuservidor.com"
