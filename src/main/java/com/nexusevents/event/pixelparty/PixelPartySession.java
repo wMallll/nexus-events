@@ -19,11 +19,10 @@ import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 import java.util.Random;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -43,6 +42,7 @@ import java.util.UUID;
 public final class PixelPartySession extends EventSession {
 
     private enum Phase {
+        DECIDING,
         SHOWING,
         PAUSE
     }
@@ -73,7 +73,7 @@ public final class PixelPartySession extends EventSession {
     // ------------------------------------------------------------------
 
     @Override
-    protected void onStart() {
+    protected void onPrepare() {
         this.platform = getArena().getRegion(ArenaKeys.REGION_PIXEL_PARTY).orElse(null);
         if (platform == null || platform.getWorld() == null) {
             context.getPlugin().getLogger().severe("pixel-party: la plataforma no esta disponible. Se cancela.");
@@ -81,15 +81,40 @@ public final class PixelPartySession extends EventSession {
             return;
         }
         captureOriginalBlocks();
+        if (context.getConfigManager().isDebug()) {
+            context.getPlugin().getLogger().info("pixel-party: plataforma de "
+                    + originalBlocks.size() + " bloques capturada para restauracion.");
+        }
         int tileSize = config.getTileSize();
         this.tilesX = (platform.getWidthX() + tileSize - 1) / tileSize;
         this.tilesZ = (platform.getWidthZ() + tileSize - 1) / tileSize;
         this.tileColors = new int[tilesX][tilesZ];
 
         this.round = 0;
-        this.phase = Phase.PAUSE;
-        this.phaseSecondsLeft = config.getPauseSeconds();
+        // La plataforma se pinta ANTES del teleport: los jugadores
+        // aparecen en el centro de una plataforma ya generada.
         paintNewPattern();
+    }
+
+    @Override
+    protected void onStart() {
+        if (platform != null) {
+            beginDeciding();
+        }
+    }
+
+    /**
+     * Los jugadores comienzan en el centro geometrico de la plataforma,
+     * parados sobre su capa superior.
+     */
+    @Override
+    protected Location resolveStartLocation() {
+        if (platform != null && platform.getWorld() != null) {
+            double x = (platform.getMinX() + platform.getMaxX() + 1) / 2.0;
+            double z = (platform.getMinZ() + platform.getMaxZ() + 1) / 2.0;
+            return new Location(platform.getWorld(), x, platform.getMaxY() + 1.0, z);
+        }
+        return super.resolveStartLocation();
     }
 
     private void captureOriginalBlocks() {
@@ -106,10 +131,16 @@ public final class PixelPartySession extends EventSession {
         if (getState() != EventState.RUNNING) {
             return;
         }
-        if (phase == Phase.SHOWING) {
-            tickShowing();
-        } else {
-            tickPause();
+        switch (phase) {
+            case DECIDING:
+                tickDeciding();
+                break;
+            case SHOWING:
+                tickShowing();
+                break;
+            default:
+                tickPause();
+                break;
         }
         sendCounter(remaining);
     }
@@ -137,13 +168,45 @@ public final class PixelPartySession extends EventSession {
     private void tickPause() {
         phaseSecondsLeft--;
         if (phaseSecondsLeft <= 0) {
-            startRound();
+            beginDeciding();
         }
     }
 
-    private void startRound() {
+    /**
+     * Comienza una ronda nueva: la plataforma se repinta de inmediato,
+     * pero el color objetivo todavia no se revela (ni aparece el item):
+     * hay un suspenso de duracion aleatoria configurable mientras "se
+     * decide" el color.
+     */
+    private void beginDeciding() {
         round++;
-        paintNewPattern();
+        if (round > 1) {
+            paintNewPattern();
+        }
+        phase = Phase.DECIDING;
+        phaseSecondsLeft = randomBetween(config.getDecisionMinSeconds(), config.getDecisionMaxSeconds());
+    }
+
+    private void tickDeciding() {
+        forEachAliveOnline(player -> context.getSounds().play(player, "countdown-tick"));
+        phaseSecondsLeft--;
+        if (phaseSecondsLeft <= 0) {
+            revealColor();
+        }
+    }
+
+    private int randomBetween(int min, int max) {
+        if (max <= min) {
+            return min;
+        }
+        return min + random.nextInt(max - min + 1);
+    }
+
+    /**
+     * Revela el color objetivo: titulo, mensaje, sonido y (si esta
+     * activado) el bloque del color en la hotbar.
+     */
+    private void revealColor() {
         targetColor = random.nextInt(config.getPalette().size());
         phase = Phase.SHOWING;
         phaseSecondsLeft = config.roundTimeFor(round);
@@ -245,19 +308,28 @@ public final class PixelPartySession extends EventSession {
 
     @Override
     protected void onPlayerEliminated(Player player) {
-        Location spawn = resolvePoint(getStartPointKey());
-        if (spawn != null) {
-            player.teleport(spawn);
+        Location center = resolveStartLocation();
+        if (center != null) {
+            player.teleport(center);
         }
-        player.setAllowFlight(true);
-        player.setFlying(true);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
+        applySpectatorState(player);
         context.getMessages().send(player, "event.pixel-party.eliminated-info");
     }
 
     private void sendCounter(int remaining) {
         PaletteColor color = config.getPalette().get(targetColor);
-        String format = phase == Phase.SHOWING ? config.getActionbarShowing() : config.getActionbarPause();
+        String format;
+        switch (phase) {
+            case DECIDING:
+                format = config.getActionbarDeciding();
+                break;
+            case SHOWING:
+                format = config.getActionbarShowing();
+                break;
+            default:
+                format = config.getActionbarPause();
+                break;
+        }
         TagResolver[] resolvers = {
                 Placeholder.unparsed("round", String.valueOf(Math.max(1, round))),
                 Placeholder.parsed("color", color.getColorTag()),
@@ -276,6 +348,12 @@ public final class PixelPartySession extends EventSession {
     @Override
     protected int getMaxDurationSeconds() {
         return config.getMaxDurationSeconds();
+    }
+
+    @Override
+    protected java.util.List<TagResolver> extraHudResolvers() {
+        return Collections.singletonList(
+                Placeholder.unparsed("round", String.valueOf(Math.max(1, round))));
     }
 
     @Override

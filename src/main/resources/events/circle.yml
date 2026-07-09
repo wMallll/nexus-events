@@ -1,62 +1,96 @@
 # ============================================================
-#  NexusEvents - El Circulo que se cierra
+#  NexusEvents - El Circulo
 #
-#  El centro se define en el juego con /evento setcircle.
-#  El spawn de la arena debe quedar dentro del radio inicial.
+#  Setup (estilo //cyl de WorldEdit): construi un piso circular
+#  (por ejemplo //cyl stone 100 1), parate en el CENTRO y ejecuta
+#  /evento setcircle (radio). El evento escanea los bloques
+#  existentes dentro de ese cilindro; no construye nada.
+#
+#  Al comenzar se activa el PvP (mano y proyectiles) y cada
+#  jugador recibe bolas de nieve para empujar rivales al vacio.
+#  Los bloques del piso se rompen en posiciones y momentos
+#  aleatorios. El ultimo jugador vivo gana. Todo se restaura.
+#
 #  Duraciones: aceptan sufijos t (ticks), s, m, h.
 # ============================================================
 
 settings:
-  # Tiempo antes de que el circulo empiece a cerrarse.
-  start-delay: "10s"
+  # Tiempo de gracia antes de que empiecen a romperse bloques
+  # (el PvP y las bolas de nieve estan activos desde el inicio).
+  start-delay: "5s"
 
-  # Duracion maxima del evento. Si el circulo llega al minimo y
-  # quedan varios vivos, ganan por supervivencia al agotarse.
+  # Duracion maxima del evento.
   max-duration: "5m"
 
-  # Radio inicial y minimo del circulo (en bloques).
-  initial-radius: 30.0
-  min-radius: 3.0
+  # Radio usado si la arena no definio uno con /evento setcircle.
+  default-radius: 30
 
-  # Cuantos bloques se reduce el radio por segundo.
-  shrink-per-second: 0.25
+  # Bloques por debajo del centro a partir de los cuales un
+  # jugador cuenta como caido al vacio.
+  fall-distance: 5
 
-  # Dano por segundo a quien queda fuera (2.0 = 1 corazon).
-  # El plugin nunca deja morir al jugador: cuando el dano lo
-  # mataria, lo elimina directamente (sin drops ni respawn).
-  damage-per-second: 2.0
+  # Capas verticales escaneadas alrededor del centro para
+  # capturar el piso (hacia abajo y hacia arriba de tus pies).
+  vertical-scan-down: 3
+  vertical-scan-up: 0
 
-# Borde visual del circulo.
+# Bolas de nieve entregadas al comenzar: 'stacks' slots con
+# 'per-stack' unidades cada uno (5 x 16 por defecto).
+snowballs:
+  enabled: true
+  stacks: 5
+  per-stack: 16
+
+# Empuje de las bolas de nieve. Lo aplica el plugin directamente,
+# asi funciona aunque otro plugin o el mundo bloqueen el pvp.
+knockback:
+  horizontal: 0.9
+  vertical: 0.35
+
+# --- Rompedor aleatorio de bloques ---
+# Cada rotura elimina un GRUPO de bloques PEGADOS (contiguos): se
+# elige una posicion al azar y se expande por los vecinos hasta
+# juntar entre min-blocks y max-blocks bloques. La SIGUIENTE
+# rotura se programa con un retardo tambien al azar entre
+# min-delay y max-delay.
+break:
+  min-delay: "5t"
+  max-delay: "40t"
+  min-blocks: 5
+  max-blocks: 7
+
+  # Aceleracion: cada este tiempo, el tamano maximo del grupo
+  # sube en 1, hasta el tope. (0 = sin aceleracion)
+  speed-up-every: "20s"
+  max-blocks-cap: 12
+
+# Borde visual del circulo (solo estetico).
 particles:
   enabled: true
-  # Nombre de la particula segun la version del servidor
-  # (FLAME existe en todas). Si no existe, se desactiva el borde.
   type: FLAME
-  # Puntos por anillo (mas puntos = borde mas denso).
   points: 60
-  # Cantidad de anillos apilados en altura.
   rings: 2
 
 titles:
-  # Aviso en los ultimos 3 segundos previos al cierre.
+  # Aviso en los ultimos 3 segundos antes de que rompa el piso.
   # Placeholder: <seconds>
   warning:
     title: "<yellow><bold><seconds>"
-    subtitle: "<gray>El círculo empieza a cerrarse..."
+    subtitle: "<gray>Los bloques empiezan a romperse..."
     fade-in: 0
     stay: 25
     fade-out: 5
     enabled: true
-  shrink-start:
-    title: "<red><bold>¡EL CÍRCULO SE CIERRA!"
-    subtitle: "<gray>Mantenete adentro"
+  start:
+    title: "<red><bold>¡PVP ACTIVADO!"
+    subtitle: "<gray>Que no te tiren al vacío"
     fade-in: 0
     stay: 40
     fade-out: 10
     enabled: true
 
 # Contador visible (actionbar, cada segundo).
-# Placeholders: <radius>, <alive>, <time>
+# Placeholders: <time>, <broken> (% del piso roto), <radius>, <alive>
 actionbar:
-  inside: "<gray>Radio: <yellow><radius> <dark_gray>| <gray>Vivos: <green><alive> <dark_gray>| <gray>Tiempo: <yellow><time>"
-  outside: "<red><bold>¡ESTÁS FUERA DEL CÍRCULO!</bold> <gray>Radio: <yellow><radius>"
+  waiting: "<gray>Los bloques se rompen en <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>"
+  playing: "<gray>Piso roto: <red><broken>% <dark_gray>| <gray>Vivos: <green><alive> <dark_gray>| <gray>Tiempo: <yellow><time>"

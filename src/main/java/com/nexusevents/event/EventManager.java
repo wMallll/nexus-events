@@ -5,6 +5,7 @@ import com.nexusevents.arena.ArenaKeys;
 import com.nexusevents.arena.ArenaLocation;
 import com.nexusevents.arena.ArenaManager;
 import com.nexusevents.configuration.ConfigManager;
+import com.nexusevents.lockout.LockoutService;
 import com.nexusevents.manager.Manager;
 import com.nexusevents.manager.Reloadable;
 import com.nexusevents.message.MessageService;
@@ -45,16 +46,18 @@ public final class EventManager implements Manager, Reloadable {
     private final Map<String, GameEvent> types = new LinkedHashMap<>();
     private final Map<String, EventSession> sessions = new LinkedHashMap<>();
     private final Map<UUID, PlayerSnapshot> orphanRestores = new HashMap<>();
+    private final Map<UUID, EventSession> playerIndex = new HashMap<>();
 
     private EventSettings settings;
 
     public EventManager(JavaPlugin plugin, ConfigManager configManager, TaskScheduler scheduler,
                         MessageService messages, TitleService titles, SoundService sounds,
-                        ScoreboardTemplateRegistry scoreboards, ArenaManager arenas) {
+                        ScoreboardTemplateRegistry scoreboards, ArenaManager arenas,
+                        LockoutService lockouts) {
         this.plugin = plugin;
         this.configManager = configManager;
-        this.context = new EventContext(plugin, scheduler, messages, titles, sounds,
-                scoreboards, arenas, this);
+        this.context = new EventContext(plugin, configManager, scheduler, messages, titles, sounds,
+                scoreboards, arenas, lockouts, this);
     }
 
     @Override
@@ -71,6 +74,7 @@ public final class EventManager implements Manager, Reloadable {
     public void disable() {
         stopAll();
         types.clear();
+        playerIndex.clear();
     }
 
     @Override
@@ -142,7 +146,8 @@ public final class EventManager implements Manager, Reloadable {
         requiredPoints.addAll(type.getRequiredPoints());
 
         for (String key : requiredPoints) {
-            ArenaLocation point = arena.getPoint(key).orElse(null);
+            ArenaLocation point = arena.getPoint(key + "_" + type.getId())
+                    .orElseGet(() -> arena.getPoint(key).orElse(null));
             if (point == null) {
                 missing.add(displayPoint(key));
             } else if (point.toBukkit() == null) {
@@ -204,6 +209,28 @@ public final class EventManager implements Manager, Reloadable {
      */
     public void sessionEnded(EventSession session) {
         sessions.remove(keyOf(session.getArena().getName()));
+        playerIndex.values().removeIf(existing -> existing == session);
+    }
+
+    /**
+     * Indexa a un participante para consultas O(1). Lo invocan las
+     * sesiones al incorporar jugadores.
+     *
+     * @param playerId identificador del jugador.
+     * @param session  sesion a la que pertenece.
+     */
+    void indexParticipant(UUID playerId, EventSession session) {
+        playerIndex.put(playerId, session);
+    }
+
+    /**
+     * Quita a un participante del indice. Lo invocan las sesiones al
+     * remover jugadores.
+     *
+     * @param playerId identificador del jugador.
+     */
+    void unindexParticipant(UUID playerId) {
+        playerIndex.remove(playerId);
     }
 
     // ------------------------------------------------------------------
@@ -219,6 +246,11 @@ public final class EventManager implements Manager, Reloadable {
      * @return resultado del intento.
      */
     public JoinResult join(Player player, String arenaName) {
+        if (context.getLockouts().isEnabled()
+                && context.getLockouts().isLocked(player.getUniqueId())
+                && !player.hasPermission(com.nexusevents.permission.Permissions.LOCKOUT_BYPASS)) {
+            return JoinResult.LOCKED;
+        }
         if (getSessionByPlayer(player.getUniqueId()).isPresent()) {
             return JoinResult.ALREADY_IN;
         }
@@ -308,12 +340,10 @@ public final class EventManager implements Manager, Reloadable {
      * @return sesion, si participa de alguna.
      */
     public Optional<EventSession> getSessionByPlayer(UUID playerId) {
-        for (EventSession session : sessions.values()) {
-            if (session.isParticipant(playerId)) {
-                return Optional.of(session);
-            }
-        }
-        return Optional.empty();
+        // Lookup O(1): este metodo se invoca en cada evento de dano,
+        // hambre y bloques del servidor a traves del listener de
+        // proteccion, por lo que debe ser lo mas barato posible.
+        return Optional.ofNullable(playerIndex.get(playerId));
     }
 
     public EventSettings getSettings() {

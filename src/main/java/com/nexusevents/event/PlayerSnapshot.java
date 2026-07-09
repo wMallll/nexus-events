@@ -31,6 +31,7 @@ public final class PlayerSnapshot {
     private final float saturation;
     private final boolean allowFlight;
     private final boolean flying;
+    private final boolean collidable;
     private final List<PotionEffect> effects;
 
     private PlayerSnapshot(Player player) {
@@ -45,6 +46,7 @@ public final class PlayerSnapshot {
         this.saturation = player.getSaturation();
         this.allowFlight = player.getAllowFlight();
         this.flying = player.isFlying();
+        this.collidable = player.isCollidable();
         this.effects = new ArrayList<>(player.getActivePotionEffects());
     }
 
@@ -79,6 +81,7 @@ public final class PlayerSnapshot {
 
         player.setAllowFlight(allowFlight);
         player.setFlying(allowFlight && flying);
+        player.setCollidable(collidable);
         player.teleport(location);
     }
 

@@ -1,6 +1,8 @@
 package com.nexusevents.listener;
 
 import com.nexusevents.event.EventManager;
+import com.nexusevents.lobby.MainLobbyService;
+import com.nexusevents.scheduler.TaskScheduler;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -26,10 +28,15 @@ import java.util.UUID;
 public final class PlayerConnectionListener implements Listener {
 
     private final EventManager eventManager;
+    private final MainLobbyService mainLobby;
+    private final TaskScheduler scheduler;
     private final Set<UUID> kickedRecently = new HashSet<>();
 
-    public PlayerConnectionListener(EventManager eventManager) {
+    public PlayerConnectionListener(EventManager eventManager, MainLobbyService mainLobby,
+                                    TaskScheduler scheduler) {
         this.eventManager = eventManager;
+        this.mainLobby = mainLobby;
+        this.scheduler = scheduler;
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -46,6 +53,17 @@ public final class PlayerConnectionListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
+        if (!event.getPlayer().hasPlayedBefore()) {
+            // Primer ingreso al servidor: se lo lleva al lobby global.
+            // Las reconexiones mantienen el comportamiento vanilla
+            // (aparecer donde se desconecto).
+            mainLobby.getLobby().ifPresent(lobby ->
+                    scheduler.syncLater(() -> {
+                        if (event.getPlayer().isOnline()) {
+                            event.getPlayer().teleport(lobby);
+                        }
+                    }, 1L));
+        }
         eventManager.handleJoin(event.getPlayer());
     }
 }

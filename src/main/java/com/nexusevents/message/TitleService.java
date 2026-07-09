@@ -2,27 +2,43 @@ package com.nexusevents.message;
 
 import com.nexusevents.configuration.model.TitleConfig;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import net.kyori.adventure.title.Title;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
-import java.time.Duration;
+import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Servicio de titulos y actionbars.
  *
- * <p>Se apoya en Adventure a traves de {@link MessageService}, lo que
- * garantiza funcionamiento desde Minecraft 1.9 sin NMS. Los textos
- * soportan legacy, HEX, MiniMessage y placeholders dinamicos, y los
- * tiempos de animacion provienen del {@link TitleConfig}.</p>
+ * <p>Los titulos se envian por la API nativa de Bukkit
+ * ({@code Player#sendTitle}), disponible desde 1.9 en todas las
+ * versiones y plataformas: si el servidor soporta la variante con
+ * tiempos de animacion (1.11+), se usa; si no, la basica. Esto evita
+ * depender de mecanismos internos de terceros que se rompen con cada
+ * version nueva del servidor. Las actionbars se envian via Adventure.</p>
  */
 public final class TitleService {
 
-    private static final long MILLIS_PER_TICK = 50L;
+    /** Player#sendTitle(String, String, int, int, int), presente desde 1.11. */
+    private static final Method SEND_TITLE_WITH_TIMES = resolveTimedMethod();
 
+    private final JavaPlugin plugin;
     private final MessageService messages;
+    private final AtomicBoolean warnedFallback = new AtomicBoolean(false);
 
-    public TitleService(MessageService messages) {
+    public TitleService(JavaPlugin plugin, MessageService messages) {
+        this.plugin = plugin;
         this.messages = messages;
+    }
+
+    private static Method resolveTimedMethod() {
+        try {
+            return Player.class.getMethod("sendTitle",
+                    String.class, String.class, int.class, int.class, int.class);
+        } catch (NoSuchMethodException exception) {
+            return null;
+        }
     }
 
     /**
@@ -37,16 +53,26 @@ public final class TitleService {
         if (config == null || !config.isEnabled()) {
             return;
         }
-        Title title = Title.title(
-                messages.parse(config.getTitle(), resolvers),
-                messages.parse(config.getSubtitle(), resolvers),
-                Title.Times.times(
-                        ticksToDuration(config.getFadeInTicks()),
-                        ticksToDuration(config.getStayTicks()),
-                        ticksToDuration(config.getFadeOutTicks())
-                )
-        );
-        messages.audience(player).showTitle(title);
+        String title = messages.legacy(config.getTitle(), resolvers);
+        String subtitle = messages.legacy(config.getSubtitle(), resolvers);
+        if (SEND_TITLE_WITH_TIMES != null) {
+            try {
+                SEND_TITLE_WITH_TIMES.invoke(player, title, subtitle,
+                        config.getFadeInTicks(), config.getStayTicks(), config.getFadeOutTicks());
+                return;
+            } catch (ReflectiveOperationException exception) {
+                if (warnedFallback.compareAndSet(false, true)) {
+                    plugin.getLogger().warning("sendTitle con tiempos fallo en esta version ("
+                            + exception + "): se usa la variante basica.");
+                }
+            }
+        }
+        sendBasicTitle(player, title, subtitle);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void sendBasicTitle(Player player, String title, String subtitle) {
+        player.sendTitle(title, subtitle);
     }
 
     /**
@@ -70,9 +96,5 @@ public final class TitleService {
      */
     public void clearTitle(Player player) {
         messages.audience(player).clearTitle();
-    }
-
-    private Duration ticksToDuration(int ticks) {
-        return Duration.ofMillis(Math.max(0, ticks) * MILLIS_PER_TICK);
     }
 }

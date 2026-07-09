@@ -1,0 +1,32 @@
+# Compila el plugin en cada push y pull request, y publica el jar
+# como artefacto descargable desde la pestana Actions de GitHub.
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Compilar con Maven
+        run: mvn -B clean package
+
+      - name: Publicar el jar como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: NexusEvents
+          path: target/NexusEvents-*.jar

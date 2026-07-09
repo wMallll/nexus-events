@@ -79,6 +79,12 @@ public final class YamlArenaStorage implements ArenaStorage {
                 }
             }
         }
+        ConfigurationSection properties = configuration.getConfigurationSection("properties");
+        if (properties != null) {
+            for (String key : properties.getKeys(false)) {
+                arena.setProperty(key, properties.getString(key, ""));
+            }
+        }
         return arena;
     }
 
@@ -92,6 +98,9 @@ public final class YamlArenaStorage implements ArenaStorage {
         }
         for (Map.Entry<String, Region> entry : arena.getRegions().entrySet()) {
             configuration.set("regions." + entry.getKey(), entry.getValue().serialize());
+        }
+        for (Map.Entry<String, String> entry : arena.getProperties().entrySet()) {
+            configuration.set("properties." + entry.getKey(), entry.getValue());
         }
 
         try {

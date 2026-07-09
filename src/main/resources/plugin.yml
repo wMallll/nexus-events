@@ -40,6 +40,8 @@ permissions:
       evento.setup.setpixelparty: true
       evento.setup.setparkour: true
       evento.setup.save: true
+      evento.setup.setmainlobby: true
+      evento.lockout: true
       evento.start: true
       evento.stop: true
       evento.join: true
@@ -86,6 +88,15 @@ permissions:
     default: op
   evento.setup.save:
     description: Permite guardar todas las arenas.
+    default: op
+  evento.setup.setmainlobby:
+    description: Permite fijar el lobby global de primer ingreso.
+    default: op
+  evento.lockout:
+    description: Permite controlar el modo torneo (bloqueo de eliminados).
+    default: op
+  evento.lockout.bypass:
+    description: Exime de los efectos del modo torneo.
     default: op
   evento.start:
     description: Permite iniciar eventos.

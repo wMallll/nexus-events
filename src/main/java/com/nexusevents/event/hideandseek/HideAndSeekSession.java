@@ -284,9 +284,7 @@ public final class HideAndSeekSession extends EventSession {
 
     @Override
     protected void onPlayerEliminated(Player player) {
-        player.setAllowFlight(true);
-        player.setFlying(true);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
+        applySpectatorState(player);
         context.getMessages().send(player, "event.hide-and-seek.eliminated-info");
         checkHuntEnd();
     }
@@ -352,6 +350,7 @@ public final class HideAndSeekSession extends EventSession {
             hunters.add(player.getUniqueId());
         }
         restoreParticipantState(player, info);
+        attachHud(player);
         broadcast("event.hide-and-seek.reconnected",
                 Placeholder.unparsed("player", player.getName()));
         return true;
@@ -379,9 +378,7 @@ public final class HideAndSeekSession extends EventSession {
     }
 
     private void onPlayerEliminatedState(Player player) {
-        player.setAllowFlight(true);
-        player.setFlying(true);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
+        applySpectatorState(player);
     }
 
     private void expireDisconnected() {

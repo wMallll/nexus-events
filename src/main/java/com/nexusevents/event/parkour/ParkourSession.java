@@ -17,8 +17,6 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
@@ -72,8 +70,10 @@ public final class ParkourSession extends EventSession {
         this.collapsing = false;
         this.collapseElapsedSeconds = 0;
         captureAndSortBlocks();
-        context.getPlugin().getLogger().info("parkour: capturados " + blocks.size()
-                + " bloques solidos de " + course.getVolume() + " posibles.");
+        if (context.getConfigManager().isDebug()) {
+            context.getPlugin().getLogger().info("parkour: capturados " + blocks.size()
+                    + " bloques solidos de " + course.getVolume() + " posibles.");
+        }
     }
 
     /**
@@ -253,9 +253,7 @@ public final class ParkourSession extends EventSession {
         if (spawn != null) {
             player.teleport(spawn);
         }
-        player.setAllowFlight(true);
-        player.setFlying(true);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
+        applySpectatorState(player);
         context.getMessages().send(player, "event.parkour.eliminated-info");
     }
 

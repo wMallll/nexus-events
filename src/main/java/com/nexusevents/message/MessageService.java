@@ -120,6 +120,19 @@ public final class MessageService implements Manager, Reloadable {
     }
 
     /**
+     * Parsea una cadena y la devuelve en formato legacy (codigos de
+     * seccion), para APIs de Bukkit que solo aceptan String: titulos
+     * nativos, scoreboards y bossbars.
+     *
+     * @param raw       texto crudo.
+     * @param resolvers placeholders dinamicos adicionales.
+     * @return texto legacy resultante.
+     */
+    public String legacy(String raw, TagResolver... resolvers) {
+        return com.nexusevents.util.TextUtil.toLegacy(raw, withPrefix(resolvers));
+    }
+
+    /**
      * Devuelve el texto crudo configurado en la ruta dada.
      *
      * @param path ruta dentro de messages.yml.

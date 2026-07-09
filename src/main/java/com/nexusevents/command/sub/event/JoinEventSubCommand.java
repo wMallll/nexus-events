@@ -68,6 +68,10 @@ public final class JoinEventSubCommand extends PlayerSubCommand {
                 messages.send(player, "event.already-started");
                 sounds.play(player, "command-error");
                 break;
+            case LOCKED:
+                messages.send(player, "event.locked-out");
+                sounds.play(player, "command-error");
+                break;
             default:
                 break;
         }

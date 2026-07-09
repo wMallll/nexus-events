@@ -18,8 +18,11 @@ public final class ArenaKeys {
     /** Punto: spawn del cazador (Escondete si puedes). */
     public static final String HUNTER_SPAWN = "hunter-spawn";
 
-    /** Punto: centro del circulo (Circulo que se cierra). */
+    /** Punto: centro del circulo (El Circulo). */
     public static final String CIRCLE_CENTER = "circle-center";
+
+    /** Propiedad: radio del circulo en bloques (El Circulo). */
+    public static final String CIRCLE_RADIUS = "circle-radius";
 
     /** Region: plataforma de Pixel Party. */
     public static final String REGION_PIXEL_PARTY = "pixel-party";

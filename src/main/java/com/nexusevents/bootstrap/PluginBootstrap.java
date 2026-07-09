@@ -12,10 +12,13 @@ import com.nexusevents.command.sub.arena.ListArenasSubCommand;
 import com.nexusevents.command.sub.arena.SelectArenaSubCommand;
 import com.nexusevents.command.sub.event.EventsSubCommand;
 import com.nexusevents.command.sub.event.JoinEventSubCommand;
+import com.nexusevents.command.sub.event.LockoutSubCommand;
 import com.nexusevents.command.sub.event.LeaveEventSubCommand;
 import com.nexusevents.command.sub.event.StartEventSubCommand;
 import com.nexusevents.command.sub.event.StopEventSubCommand;
 import com.nexusevents.command.sub.setup.SaveSubCommand;
+import com.nexusevents.command.sub.setup.SetCircleSubCommand;
+import com.nexusevents.command.sub.setup.SetMainLobbySubCommand;
 import com.nexusevents.command.sub.setup.SetPointSubCommand;
 import com.nexusevents.command.sub.setup.SetRegionSubCommand;
 import com.nexusevents.compatibility.ServerVersion;
@@ -25,17 +28,22 @@ import com.nexusevents.event.circle.CircleEvent;
 import com.nexusevents.event.hideandseek.HideAndSeekEvent;
 import com.nexusevents.event.parkour.ParkourEvent;
 import com.nexusevents.event.pixelparty.PixelPartyEvent;
+import com.nexusevents.lobby.MainLobbyService;
+import com.nexusevents.lockout.LockoutService;
 import com.nexusevents.listener.EventProtectionListener;
+import com.nexusevents.listener.LockoutListener;
 import com.nexusevents.listener.ListenerManager;
 import com.nexusevents.listener.PlayerConnectionListener;
 import com.nexusevents.manager.Manager;
 import com.nexusevents.manager.ManagerRegistry;
 import com.nexusevents.message.MessageService;
 import com.nexusevents.message.TitleService;
+import com.nexusevents.placeholder.NexusEventsExpansion;
 import com.nexusevents.scheduler.TaskScheduler;
 import com.nexusevents.scoreboard.ScoreboardTemplateRegistry;
 import com.nexusevents.sound.SoundService;
 import com.nexusevents.storage.YamlArenaStorage;
+import org.bukkit.Bukkit;
 
 /**
  * Orquesta el ciclo de vida completo del plugin.
@@ -94,18 +102,22 @@ public final class PluginBootstrap {
         SoundService soundService = new SoundService(plugin, configManager);
         ScoreboardTemplateRegistry scoreboardTemplates = new ScoreboardTemplateRegistry(plugin, configManager);
         ArenaManager arenaManager = new ArenaManager(plugin, new YamlArenaStorage(plugin));
+        MainLobbyService mainLobbyService = new MainLobbyService(plugin, configManager);
+        LockoutService lockoutService = new LockoutService(plugin, configManager);
         CommandManager commandManager = new CommandManager(plugin, managerRegistry, messageService);
 
-        this.titleService = new TitleService(messageService);
+        this.titleService = new TitleService(plugin, messageService);
 
         EventManager eventManager = new EventManager(plugin, configManager, taskScheduler,
-                messageService, titleService, soundService, scoreboardTemplates, arenaManager);
+                messageService, titleService, soundService, scoreboardTemplates, arenaManager,
+                lockoutService);
         eventManager.register(new HideAndSeekEvent(configManager, plugin.getLogger()));
         eventManager.register(new PixelPartyEvent(configManager, plugin.getLogger()));
         eventManager.register(new ParkourEvent(configManager, plugin.getLogger()));
         eventManager.register(new CircleEvent(configManager, plugin.getLogger()));
 
-        registerArenaCommands(commandManager, arenaManager, messageService, soundService);
+        registerArenaCommands(commandManager, arenaManager, eventManager, mainLobbyService,
+                messageService, soundService);
         registerEventCommands(commandManager, eventManager, messageService, soundService);
 
         managerRegistry.register(ConfigManager.class, configManager);
@@ -113,6 +125,8 @@ public final class PluginBootstrap {
         managerRegistry.register(SoundService.class, soundService);
         managerRegistry.register(ScoreboardTemplateRegistry.class, scoreboardTemplates);
         managerRegistry.register(ArenaManager.class, arenaManager);
+        managerRegistry.register(MainLobbyService.class, mainLobbyService);
+        managerRegistry.register(LockoutService.class, lockoutService);
         managerRegistry.register(EventManager.class, eventManager);
         managerRegistry.register(CommandManager.class, commandManager);
     }
@@ -121,6 +135,7 @@ public final class PluginBootstrap {
      * Registra los comandos de administracion de arenas y de setup.
      */
     private void registerArenaCommands(CommandManager commands, ArenaManager arenas,
+                                       EventManager events, MainLobbyService mainLobby,
                                        MessageService messages, SoundService sounds) {
         commands.register(new CreateArenaSubCommand(arenas, setupSessions, messages, sounds));
         commands.register(new DeleteArenaSubCommand(arenas, setupSessions, messages, sounds));
@@ -128,15 +143,16 @@ public final class PluginBootstrap {
         commands.register(new SelectArenaSubCommand(arenas, setupSessions, messages, sounds));
         commands.register(new ArenaInfoSubCommand(arenas, setupSessions, messages));
 
-        commands.register(new SetPointSubCommand("setspawn", ArenaKeys.SPAWN, arenas, setupSessions, messages, sounds));
-        commands.register(new SetPointSubCommand("setlobby", ArenaKeys.LOBBY, arenas, setupSessions, messages, sounds));
-        commands.register(new SetPointSubCommand("sethunterspawn", ArenaKeys.HUNTER_SPAWN, arenas, setupSessions, messages, sounds));
-        commands.register(new SetPointSubCommand("setcircle", ArenaKeys.CIRCLE_CENTER, arenas, setupSessions, messages, sounds));
+        commands.register(new SetPointSubCommand("setspawn", ArenaKeys.SPAWN, arenas, setupSessions, events, messages, sounds));
+        commands.register(new SetPointSubCommand("setlobby", ArenaKeys.LOBBY, arenas, setupSessions, events, messages, sounds));
+        commands.register(new SetPointSubCommand("sethunterspawn", ArenaKeys.HUNTER_SPAWN, arenas, setupSessions, events, messages, sounds));
+        commands.register(new SetCircleSubCommand(arenas, setupSessions, messages, sounds));
 
         commands.register(new SetRegionSubCommand("setpixelparty", ArenaKeys.REGION_PIXEL_PARTY, arenas, setupSessions, messages, sounds));
         commands.register(new SetRegionSubCommand("setparkour", ArenaKeys.REGION_PARKOUR, arenas, setupSessions, messages, sounds));
 
         commands.register(new SaveSubCommand(arenas, messages, sounds));
+        commands.register(new SetMainLobbySubCommand(mainLobby, messages, sounds));
     }
 
     /**
@@ -149,6 +165,7 @@ public final class PluginBootstrap {
         commands.register(new JoinEventSubCommand(events, messages, sounds));
         commands.register(new LeaveEventSubCommand(events, messages, sounds));
         commands.register(new EventsSubCommand(events, messages));
+        commands.register(new LockoutSubCommand(managerRegistry.get(LockoutService.class), messages, sounds));
     }
 
     /**
@@ -157,10 +174,27 @@ public final class PluginBootstrap {
      */
     private void registerListeners() {
         EventManager eventManager = managerRegistry.get(EventManager.class);
+        MainLobbyService mainLobbyService = managerRegistry.get(MainLobbyService.class);
+        LockoutService lockoutService = managerRegistry.get(LockoutService.class);
+        MessageService lockoutMessages = managerRegistry.get(MessageService.class);
         listenerManager.registerAll(
-                new PlayerConnectionListener(eventManager),
-                new EventProtectionListener(eventManager)
+                new PlayerConnectionListener(eventManager, mainLobbyService, taskScheduler),
+                new EventProtectionListener(eventManager),
+                new LockoutListener(lockoutService, lockoutMessages)
         );
+        registerIntegrations(eventManager);
+    }
+
+    /**
+     * Registra integraciones opcionales con plugins de terceros
+     * presentes en el servidor.
+     */
+    private void registerIntegrations(EventManager eventManager) {
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new NexusEventsExpansion(plugin, eventManager,
+                    managerRegistry.get(MessageService.class)).register();
+            plugin.getLogger().info("PlaceholderAPI detectado: placeholders %nexusevents_...% registrados.");
+        }
     }
 
     public <T extends Manager> T getManager(Class<T> type) {

@@ -20,8 +20,15 @@ settings:
   round-time-min: "2s"
   round-time-decrease: "1s"
 
-  # Pausa entre rondas (la plataforma se repinta al terminar).
+  # Pausa entre rondas con los huecos a la vista; al terminar, la
+  # plataforma se repinta y comienza la decision del color siguiente.
   pause-between-rounds: "4s"
+
+  # Suspenso de "decision": la plataforma ya esta pintada pero el
+  # color objetivo todavia no se revela (ni aparece el item en el
+  # inventario). La duracion es aleatoria entre estos dos valores.
+  decision-time-min: "2s"
+  decision-time-max: "3s"
 
   # Bloques por debajo de la plataforma a partir de los cuales
   # un jugador cuenta como caido.
@@ -80,5 +87,6 @@ titles:
 # Placeholders: <round>, <color>, <colorname>, <time> (fase),
 # <total> (tiempo restante del evento), <alive>
 actionbar:
+  deciding: "<gray>Ronda <yellow><round> <dark_gray>| <light_purple>Eligiendo color... <dark_gray>| <gray>Vivos: <green><alive>"
   showing: "<gray>Ronda <yellow><round> <dark_gray>| <color><bold><colorname></bold> <dark_gray>| <gray>Tiempo: <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>"
   pause: "<gray>Ronda <yellow><round> <dark_gray>| <gray>Siguiente color en <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>"

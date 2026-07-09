@@ -25,5 +25,8 @@ public enum JoinResult {
     FULL,
 
     /** El evento ya comenzo. */
-    ALREADY_STARTED
+    ALREADY_STARTED,
+
+    /** El jugador esta bloqueado por el modo torneo. */
+    LOCKED
 }

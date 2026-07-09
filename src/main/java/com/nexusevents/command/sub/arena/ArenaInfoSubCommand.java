@@ -52,7 +52,8 @@ public final class ArenaInfoSubCommand extends SubCommand {
         }
 
         messages.send(sender, "arena.info-header", Placeholder.unparsed("arena", arena.getName()));
-        if (arena.getPoints().isEmpty() && arena.getRegions().isEmpty()) {
+        if (arena.getPoints().isEmpty() && arena.getRegions().isEmpty()
+                && arena.getProperties().isEmpty()) {
             messages.send(sender, "arena.info-empty");
             return;
         }
@@ -65,6 +66,11 @@ public final class ArenaInfoSubCommand extends SubCommand {
             messages.send(sender, "arena.info-region",
                     Placeholder.parsed("region", displayName("arena.region-names.", entry.getKey())),
                     Placeholder.unparsed("dimensions", entry.getValue().describe()));
+        }
+        for (Map.Entry<String, String> entry : arena.getProperties().entrySet()) {
+            messages.send(sender, "arena.info-property",
+                    Placeholder.parsed("property", displayName("arena.property-names.", entry.getKey())),
+                    Placeholder.unparsed("value", entry.getValue()));
         }
     }
 
@@ -79,6 +85,14 @@ public final class ArenaInfoSubCommand extends SubCommand {
     }
 
     private String displayName(String basePath, String key) {
+        int separator = key.indexOf('_');
+        if (separator > 0) {
+            String base = key.substring(0, separator);
+            String eventId = key.substring(separator + 1);
+            return messages.rawOr(basePath + base, base)
+                    + " <dark_gray>(<gray>" + messages.rawOr("event.names." + eventId, eventId)
+                    + "<dark_gray>)";
+        }
         return messages.rawOr(basePath + key, key);
     }
 

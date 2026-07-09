@@ -86,3 +86,9 @@ sounds:
     volume: 0.8
     pitch: 0.7
     enabled: true
+
+  circle-break:
+    sound: BLOCK_STONE_BREAK
+    volume: 0.9
+    pitch: 1.0
+    enabled: true

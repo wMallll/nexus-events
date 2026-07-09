@@ -57,6 +57,8 @@ public final class PixelPartyConfig {
     private final int roundTimeMinSeconds;
     private final int roundTimeDecreaseSeconds;
     private final int pauseSeconds;
+    private final int decisionMinSeconds;
+    private final int decisionMaxSeconds;
     private final int fallDistance;
     private final boolean giveTargetItem;
     private final List<PaletteColor> palette;
@@ -64,18 +66,22 @@ public final class PixelPartyConfig {
     private final TitleConfig clearedTitle;
     private final String actionbarShowing;
     private final String actionbarPause;
+    private final String actionbarDeciding;
 
     private PixelPartyConfig(int maxDurationSeconds, int tileSize, int roundTimeStartSeconds,
                              int roundTimeMinSeconds, int roundTimeDecreaseSeconds, int pauseSeconds,
+                             int decisionMinSeconds, int decisionMaxSeconds,
                              int fallDistance, boolean giveTargetItem, List<PaletteColor> palette,
                              TitleConfig colorTitle, TitleConfig clearedTitle,
-                             String actionbarShowing, String actionbarPause) {
+                             String actionbarShowing, String actionbarPause, String actionbarDeciding) {
         this.maxDurationSeconds = maxDurationSeconds;
         this.tileSize = tileSize;
         this.roundTimeStartSeconds = roundTimeStartSeconds;
         this.roundTimeMinSeconds = roundTimeMinSeconds;
         this.roundTimeDecreaseSeconds = roundTimeDecreaseSeconds;
         this.pauseSeconds = pauseSeconds;
+        this.decisionMinSeconds = decisionMinSeconds;
+        this.decisionMaxSeconds = decisionMaxSeconds;
         this.fallDistance = fallDistance;
         this.giveTargetItem = giveTargetItem;
         this.palette = Collections.unmodifiableList(palette);
@@ -83,6 +89,7 @@ public final class PixelPartyConfig {
         this.clearedTitle = clearedTitle;
         this.actionbarShowing = actionbarShowing;
         this.actionbarPause = actionbarPause;
+        this.actionbarDeciding = actionbarDeciding;
     }
 
     /**
@@ -100,6 +107,8 @@ public final class PixelPartyConfig {
                 Math.max(1, TimeUtil.parseSeconds(file.getString("settings.round-time-min", ""), 2)),
                 Math.max(0, TimeUtil.parseSeconds(file.getString("settings.round-time-decrease", ""), 1)),
                 Math.max(1, TimeUtil.parseSeconds(file.getString("settings.pause-between-rounds", ""), 4)),
+                Math.max(1, TimeUtil.parseSeconds(file.getString("settings.decision-time-min", ""), 2)),
+                Math.max(1, TimeUtil.parseSeconds(file.getString("settings.decision-time-max", ""), 3)),
                 Math.max(1, file.getInt("settings.fall-distance", 4)),
                 file.getBoolean("settings.give-target-item", true),
                 parsePalette(file, logger),
@@ -108,7 +117,9 @@ public final class PixelPartyConfig {
                 file.getString("actionbar.showing",
                         "<gray>Ronda <yellow><round> <dark_gray>| <color><colorname> <dark_gray>| <gray><time> <dark_gray>| <gray>Vivos: <green><alive>"),
                 file.getString("actionbar.pause",
-                        "<gray>Ronda <yellow><round> <dark_gray>| <gray>Siguiente color en <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>")
+                        "<gray>Ronda <yellow><round> <dark_gray>| <gray>Siguiente color en <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>"),
+                file.getString("actionbar.deciding",
+                        "<gray>Ronda <yellow><round> <dark_gray>| <light_purple>Eligiendo color... <dark_gray>| <gray>Vivos: <green><alive>")
         );
     }
 
@@ -185,6 +196,24 @@ public final class PixelPartyConfig {
         return pauseSeconds;
     }
 
+    /**
+     * Suspenso minimo de la fase de decision del color.
+     *
+     * @return segundos minimos.
+     */
+    public int getDecisionMinSeconds() {
+        return decisionMinSeconds;
+    }
+
+    /**
+     * Suspenso maximo de la fase de decision del color.
+     *
+     * @return segundos maximos (la duracion real es aleatoria).
+     */
+    public int getDecisionMaxSeconds() {
+        return Math.max(decisionMinSeconds, decisionMaxSeconds);
+    }
+
     public int getFallDistance() {
         return fallDistance;
     }
@@ -211,5 +240,9 @@ public final class PixelPartyConfig {
 
     public String getActionbarPause() {
         return actionbarPause;
+    }
+
+    public String getActionbarDeciding() {
+        return actionbarDeciding;
     }
 }

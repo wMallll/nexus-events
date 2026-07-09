@@ -51,6 +51,12 @@ public final class Permissions {
     /** Listado de eventos disponibles y activos. */
     public static final String EVENTS_LIST = "evento.events";
 
+    /** Control del modo torneo (bloqueo de eliminados). */
+    public static final String LOCKOUT = "evento.lockout";
+
+    /** Exencion de los efectos del modo torneo (para admins). */
+    public static final String LOCKOUT_BYPASS = "evento.lockout.bypass";
+
     /**
      * Construye el nodo de permiso de un comando de setup concreto
      * (por ejemplo {@code evento.setup.setspawn}).

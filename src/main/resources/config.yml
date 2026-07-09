@@ -31,6 +31,16 @@ events:
   # definir la suya propia en sus archivos).
   max-duration: "10m"
 
+  # Bossbar de la sesion, visible durante todo el evento.
+  # Placeholders: <event>, <arena>, <time>, <alive>, <players>,
+  # <spectators>, <state>. Colores: PINK, BLUE, RED, GREEN, YELLOW,
+  # PURPLE, WHITE. Estilos: SOLID, SEGMENTED_6/10/12/20.
+  bossbar:
+    enabled: true
+    title: "<event> <dark_gray>| <gray>Tiempo: <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>"
+    color: YELLOW
+    style: SOLID
+
   # Titulo mostrado durante los ultimos 5 segundos de la cuenta
   # regresiva. Placeholder disponible: <seconds>
   countdown-title:

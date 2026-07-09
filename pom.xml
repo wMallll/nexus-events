@@ -7,7 +7,7 @@
 
     <groupId>com.nexusevents</groupId>
     <artifactId>nexus-events</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.4</version>
     <packaging>jar</packaging>
 
     <name>NexusEvents</name>
@@ -17,8 +17,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <adventure.version>4.17.0</adventure.version>
-        <adventure.platform.version>4.3.4</adventure.platform.version>
+        <adventure.version>4.21.0</adventure.version>
+        <adventure.platform.version>4.4.1</adventure.platform.version>
     </properties>
 
     <repositories>
@@ -26,6 +26,11 @@
         <repository>
             <id>spigotmc-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+        <!-- PlaceholderAPI -->
+        <repository>
+            <id>placeholderapi-repo</id>
+            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
     </repositories>
 
@@ -78,7 +83,15 @@
         <dependency>
             <groupId>fr.mrmicky</groupId>
             <artifactId>fastboard</artifactId>
-            <version>2.1.3</version>
+            <version>2.2.0</version>
+        </dependency>
+
+        <!-- Placeholders publicos (integracion opcional en runtime) -->
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>placeholderapi</artifactId>
+            <version>2.11.6</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Materiales, sonidos y partículas multi-versión sin NMS -->
