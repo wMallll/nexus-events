@@ -57,6 +57,21 @@ public final class Permissions {
     /** Exencion de los efectos del modo torneo (para admins). */
     public static final String LOCKOUT_BYPASS = "evento.lockout.bypass";
 
+    /** Gestor de mundos del plugin. */
+    public static final String WORLD = "evento.world";
+
+    /** Menu principal del plugin. */
+    public static final String MENU = "evento.menu";
+
+    /** Teletransportar a todos los eliminados hasta el ejecutor. */
+    public static final String TP_DEAD = "evento.tpdead";
+
+    /** Descalificar participantes. */
+    public static final String DISQUALIFY = "evento.disqualify";
+
+    /** Recibir y usar el Palo Descalificador. */
+    public static final String DQ_STICK = "evento.dqstick";
+
     /**
      * Construye el nodo de permiso de un comando de setup concreto
      * (por ejemplo {@code evento.setup.setspawn}).

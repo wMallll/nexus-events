@@ -24,11 +24,15 @@ public final class ArenaKeys {
     /** Propiedad: radio del circulo en bloques (El Circulo). */
     public static final String CIRCLE_RADIUS = "circle-radius";
 
+    /** Prefijo de region: fragmentos ordenados del Parkour (islas). */
+    public static final String PARKOUR_FRAGMENT_PREFIX = "parkour-fragment-";
+
+    /** Propiedad: altura minima de seguridad (teleport al lobby). */
+    public static final String MIN_Y = "min-y";
+
     /** Region: plataforma de Pixel Party. */
     public static final String REGION_PIXEL_PARTY = "pixel-party";
 
-    /** Region: zona del recorrido de Parkour. */
-    public static final String REGION_PARKOUR = "parkour";
 
     private ArenaKeys() {
         throw new UnsupportedOperationException("Clase de constantes: no debe instanciarse.");

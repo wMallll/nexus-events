@@ -71,6 +71,15 @@ public final class Arena {
         return Optional.ofNullable(regions.get(key));
     }
 
+    /**
+     * Elimina una region configurada de la arena.
+     *
+     * @param key clave de la region.
+     */
+    public void removeRegion(String key) {
+        regions.remove(key);
+    }
+
     public boolean hasRegion(String key) {
         return regions.containsKey(key);
     }

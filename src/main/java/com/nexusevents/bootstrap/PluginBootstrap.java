@@ -12,13 +12,19 @@ import com.nexusevents.command.sub.arena.ListArenasSubCommand;
 import com.nexusevents.command.sub.arena.SelectArenaSubCommand;
 import com.nexusevents.command.sub.event.EventsSubCommand;
 import com.nexusevents.command.sub.event.JoinEventSubCommand;
+import com.nexusevents.command.sub.event.DisqualifyStickSubCommand;
+import com.nexusevents.command.sub.event.DisqualifySubCommand;
 import com.nexusevents.command.sub.event.LockoutSubCommand;
+import com.nexusevents.command.sub.event.TpDeadSubCommand;
+import com.nexusevents.command.sub.menu.MenuSubCommand;
 import com.nexusevents.command.sub.event.LeaveEventSubCommand;
 import com.nexusevents.command.sub.event.StartEventSubCommand;
 import com.nexusevents.command.sub.event.StopEventSubCommand;
 import com.nexusevents.command.sub.setup.SaveSubCommand;
+import com.nexusevents.command.sub.setup.ParkourSetupSubCommand;
 import com.nexusevents.command.sub.setup.SetCircleSubCommand;
 import com.nexusevents.command.sub.setup.SetMainLobbySubCommand;
+import com.nexusevents.command.sub.setup.SetMinYSubCommand;
 import com.nexusevents.command.sub.setup.SetPointSubCommand;
 import com.nexusevents.command.sub.setup.SetRegionSubCommand;
 import com.nexusevents.compatibility.ServerVersion;
@@ -30,8 +36,13 @@ import com.nexusevents.event.parkour.ParkourEvent;
 import com.nexusevents.event.pixelparty.PixelPartyEvent;
 import com.nexusevents.lobby.MainLobbyService;
 import com.nexusevents.lockout.LockoutService;
+import com.nexusevents.command.sub.world.WorldSubCommand;
+import com.nexusevents.world.WorldService;
 import com.nexusevents.listener.EventProtectionListener;
+import com.nexusevents.listener.DisqualifyListener;
 import com.nexusevents.listener.LockoutListener;
+import com.nexusevents.menu.MenuListener;
+import com.nexusevents.menu.MenuService;
 import com.nexusevents.listener.ListenerManager;
 import com.nexusevents.listener.PlayerConnectionListener;
 import com.nexusevents.manager.Manager;
@@ -102,8 +113,10 @@ public final class PluginBootstrap {
         SoundService soundService = new SoundService(plugin, configManager);
         ScoreboardTemplateRegistry scoreboardTemplates = new ScoreboardTemplateRegistry(plugin, configManager);
         ArenaManager arenaManager = new ArenaManager(plugin, new YamlArenaStorage(plugin));
-        MainLobbyService mainLobbyService = new MainLobbyService(plugin, configManager);
+        MainLobbyService mainLobbyService = new MainLobbyService(plugin, configManager,
+                taskScheduler, messageService);
         LockoutService lockoutService = new LockoutService(plugin, configManager);
+        WorldService worldService = new WorldService(plugin, configManager, taskScheduler);
         CommandManager commandManager = new CommandManager(plugin, managerRegistry, messageService);
 
         this.titleService = new TitleService(plugin, messageService);
@@ -116,9 +129,20 @@ public final class PluginBootstrap {
         eventManager.register(new ParkourEvent(configManager, plugin.getLogger()));
         eventManager.register(new CircleEvent(configManager, plugin.getLogger()));
 
+        mainLobbyService.setParticipantCheck(playerId ->
+                eventManager.getSessionByPlayer(playerId).isPresent());
+
+        MenuService menuService = new MenuService(plugin, taskScheduler, messageService,
+                arenaManager, eventManager, worldService, lockoutService);
+
         registerArenaCommands(commandManager, arenaManager, eventManager, mainLobbyService,
                 messageService, soundService);
-        registerEventCommands(commandManager, eventManager, messageService, soundService);
+        registerEventCommands(commandManager, eventManager, lockoutService, messageService, soundService);
+        commandManager.register(new WorldSubCommand(worldService, messageService, soundService));
+        commandManager.register(new MenuSubCommand(menuService, messageService));
+        commandManager.register(new TpDeadSubCommand(eventManager, messageService, soundService));
+        commandManager.register(new DisqualifySubCommand(eventManager, messageService, soundService));
+        commandManager.register(new DisqualifyStickSubCommand(messageService, soundService));
 
         managerRegistry.register(ConfigManager.class, configManager);
         managerRegistry.register(MessageService.class, messageService);
@@ -127,6 +151,8 @@ public final class PluginBootstrap {
         managerRegistry.register(ArenaManager.class, arenaManager);
         managerRegistry.register(MainLobbyService.class, mainLobbyService);
         managerRegistry.register(LockoutService.class, lockoutService);
+        managerRegistry.register(WorldService.class, worldService);
+        managerRegistry.register(MenuService.class, menuService);
         managerRegistry.register(EventManager.class, eventManager);
         managerRegistry.register(CommandManager.class, commandManager);
     }
@@ -149,23 +175,25 @@ public final class PluginBootstrap {
         commands.register(new SetCircleSubCommand(arenas, setupSessions, messages, sounds));
 
         commands.register(new SetRegionSubCommand("setpixelparty", ArenaKeys.REGION_PIXEL_PARTY, arenas, setupSessions, messages, sounds));
-        commands.register(new SetRegionSubCommand("setparkour", ArenaKeys.REGION_PARKOUR, arenas, setupSessions, messages, sounds));
+        commands.register(new ParkourSetupSubCommand(arenas, setupSessions, messages, sounds));
 
         commands.register(new SaveSubCommand(arenas, messages, sounds));
         commands.register(new SetMainLobbySubCommand(mainLobby, messages, sounds));
+        commands.register(new SetMinYSubCommand(arenas, setupSessions, events, mainLobby, messages, sounds));
     }
 
     /**
      * Registra los comandos del sistema de eventos.
      */
     private void registerEventCommands(CommandManager commands, EventManager events,
-                                       MessageService messages, SoundService sounds) {
+                                       LockoutService lockouts, MessageService messages,
+                                       SoundService sounds) {
         commands.register(new StartEventSubCommand(events, messages, sounds));
         commands.register(new StopEventSubCommand(events, messages, sounds));
         commands.register(new JoinEventSubCommand(events, messages, sounds));
         commands.register(new LeaveEventSubCommand(events, messages, sounds));
         commands.register(new EventsSubCommand(events, messages));
-        commands.register(new LockoutSubCommand(managerRegistry.get(LockoutService.class), messages, sounds));
+        commands.register(new LockoutSubCommand(lockouts, messages, sounds));
     }
 
     /**
@@ -177,10 +205,13 @@ public final class PluginBootstrap {
         MainLobbyService mainLobbyService = managerRegistry.get(MainLobbyService.class);
         LockoutService lockoutService = managerRegistry.get(LockoutService.class);
         MessageService lockoutMessages = managerRegistry.get(MessageService.class);
+        MenuService menuService = managerRegistry.get(MenuService.class);
         listenerManager.registerAll(
                 new PlayerConnectionListener(eventManager, mainLobbyService, taskScheduler),
                 new EventProtectionListener(eventManager),
-                new LockoutListener(lockoutService, lockoutMessages)
+                new LockoutListener(lockoutService, lockoutMessages),
+                new DisqualifyListener(eventManager, lockoutMessages),
+                new MenuListener(menuService)
         );
         registerIntegrations(eventManager);
     }

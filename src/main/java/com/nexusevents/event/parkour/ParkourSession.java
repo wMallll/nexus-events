@@ -1,5 +1,7 @@
 package com.nexusevents.event.parkour;
 
+import com.cryptomorin.xseries.XBlock;
+import com.cryptomorin.xseries.XMaterial;
 import com.nexusevents.arena.Arena;
 import com.nexusevents.arena.ArenaKeys;
 import com.nexusevents.arena.Region;
@@ -14,39 +16,51 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.UUID;
 
 /**
- * Partida de Parkour Colapsable.
+ * Partida del Parkour por islas.
  *
- * <p>Optimizado para evitar lag: al comenzar se capturan unicamente los
- * bloques solidos del recorrido y se ordenan una sola vez por distancia
- * al punto de inicio; el colapso avanza consumiendo esa lista en lotes
- * pequenos a intervalos regulares (nunca miles de bloques en un mismo
- * tick), con aceleracion progresiva y tope configurable. La onda sigue
- * la forma real del recorrido, aunque sea curvo. Al finalizar, todos
- * los bloques se restauran a su estado original.</p>
+ * <p>El recorrido se define como fragmentos (islas) ordenados con
+ * {@code /evento parkour}. Tras la ventaja inicial, las islas se
+ * desintegran una por una EN ESE ORDEN, y cada una de forma progresiva:
+ * punados aleatorios de bloques cada pocos ticks, con pausa entre islas
+ * y aceleracion opcional por isla. Caer bajo el recorrido elimina; el
+ * ultimo en pie gana (o los sobrevivientes por tiempo). Todo se
+ * restaura al finalizar.</p>
  */
 public final class ParkourSession extends EventSession {
 
     private final ParkourConfig config;
-    private final List<BlockState> blocks = new ArrayList<>();
+    private final Random random = new Random();
+    private final List<List<BlockState>> islands = new ArrayList<>();
 
-    private Region course;
-    private int cursor;
-    private int blocksPerStep;
+    private World courseWorld;
+    private int lowestY;
     private boolean collapsing;
-    private int collapseElapsedSeconds;
-    private BukkitTask collapseTask;
+    private int currentIsland;
+    private int islandCursor;
+    private int totalBlocks;
+    private int brokenBlocks;
+    private boolean pausedBetweenIslands;
+    private boolean longPause;
+    private int pauseSecondsLeft;
+    private int nextIslandNumber;
+    private long currentStepInterval;
+    private BukkitTask stepTask;
 
     public ParkourSession(EventContext context, GameEvent type, Arena arena, ParkourConfig config) {
         super(context, type, arena);
@@ -54,55 +68,105 @@ public final class ParkourSession extends EventSession {
     }
 
     // ------------------------------------------------------------------
-    // Ciclo de vida
+    // Preparacion
     // ------------------------------------------------------------------
 
     @Override
-    protected void onStart() {
-        this.course = getArena().getRegion(ArenaKeys.REGION_PARKOUR).orElse(null);
-        if (course == null || course.getWorld() == null) {
-            context.getPlugin().getLogger().severe("parkour: el recorrido no esta disponible. Se cancela.");
+    protected void onPrepare() {
+        islands.clear();
+        this.collapsing = false;
+        this.currentIsland = 0;
+        this.islandCursor = 0;
+        this.currentStepInterval = config.getStepIntervalTicks();
+        this.totalBlocks = 0;
+        this.brokenBlocks = 0;
+        this.pausedBetweenIslands = false;
+        this.longPause = false;
+        this.pauseSecondsLeft = 0;
+        this.nextIslandNumber = 0;
+        this.lowestY = Integer.MAX_VALUE;
+        this.courseWorld = null;
+
+        Set<Long> claimed = new HashSet<>();
+        int[] overlapped = {0};
+        int index = 1;
+        Region fragment;
+        int total = 0;
+        while ((fragment = getArena().getRegion(ArenaKeys.PARKOUR_FRAGMENT_PREFIX + index).orElse(null)) != null) {
+            if (fragment.getWorld() == null) {
+                context.getPlugin().getLogger().severe("parkour: el mundo del fragmento #" + index
+                        + " no esta cargado. Se cancela.");
+                end(EventEndReason.CANCELLED);
+                return;
+            }
+            if (courseWorld == null) {
+                courseWorld = fragment.getWorld();
+            }
+            List<BlockState> blocks = captureIsland(fragment, claimed, overlapped);
+            Collections.shuffle(blocks, random);
+            islands.add(blocks);
+            lowestY = Math.min(lowestY, fragment.getMinY());
+            total += blocks.size();
+            index++;
+        }
+        this.totalBlocks = total;
+        if (overlapped[0] > 0) {
+            context.getPlugin().getLogger().info("parkour: " + overlapped[0]
+                    + " bloques compartidos entre fragmentos superpuestos se asignaron al primero que los contiene.");
+        }
+        if (islands.isEmpty()) {
+            context.getPlugin().getLogger().severe(
+                    "parkour: la arena no tiene fragmentos (/evento parkour). Se cancela.");
             end(EventEndReason.CANCELLED);
             return;
         }
-        this.blocksPerStep = config.getBlocksPerStepStart();
-        this.cursor = 0;
-        this.collapsing = false;
-        this.collapseElapsedSeconds = 0;
-        captureAndSortBlocks();
         if (context.getConfigManager().isDebug()) {
-            context.getPlugin().getLogger().info("parkour: capturados " + blocks.size()
-                    + " bloques solidos de " + course.getVolume() + " posibles.");
+            context.getPlugin().getLogger().info("parkour: " + islands.size() + " islas capturadas ("
+                    + total + " bloques solidos).");
         }
     }
 
     /**
-     * Captura solo los bloques solidos del recorrido (un parkour es
-     * mayormente aire) y los ordena por distancia al punto de inicio,
-     * definiendo el orden exacto del colapso de una sola vez.
+     * Captura los bloques solidos del fragmento, saltando los que ya
+     * fueron reclamados por un fragmento anterior: si dos cajas se
+     * superponen, cada bloque pertenece solo a la primera isla que lo
+     * contiene. Asi el total es exacto y el progreso llega al 100%.
      */
-    private void captureAndSortBlocks() {
-        blocks.clear();
-        course.forEachBlock(block -> {
-            if (block.getType() != Material.AIR) {
+    private List<BlockState> captureIsland(Region fragment, Set<Long> claimed, int[] overlapped) {
+        List<BlockState> blocks = new ArrayList<>();
+        fragment.forEachBlock(block -> {
+            if (block.getType() == Material.AIR) {
+                return;
+            }
+            if (claimed.add(pack(block.getX(), block.getY(), block.getZ()))) {
                 blocks.add(block.getState());
+            } else {
+                overlapped[0]++;
             }
         });
-        Location origin = resolvePoint(getStartPointKey());
-        final double originX = origin != null ? origin.getX() : course.getMinX();
-        final double originY = origin != null ? origin.getY() : course.getMinY();
-        final double originZ = origin != null ? origin.getZ() : course.getMinZ();
-        blocks.sort(Comparator.comparingDouble(state -> {
-            double dx = state.getX() + 0.5 - originX;
-            double dy = state.getY() + 0.5 - originY;
-            double dz = state.getZ() + 0.5 - originZ;
-            return dx * dx + dy * dy + dz * dz;
-        }));
+        return blocks;
+    }
+
+    private static long pack(int x, int y, int z) {
+        return (((long) x & 0x3FFFFFFL) << 38) | (((long) y & 0xFFFL) << 26) | ((long) z & 0x3FFFFFFL);
     }
 
     @Override
+    protected void onStart() {
+        if (islands.isEmpty()) {
+            return;
+        }
+        broadcast("event.parkour.islands-info",
+                Placeholder.unparsed("count", String.valueOf(islands.size())));
+    }
+
+    // ------------------------------------------------------------------
+    // Tick, colapso por islas y desintegracion progresiva
+    // ------------------------------------------------------------------
+
+    @Override
     protected void onSecond(int elapsed, int remaining) {
-        if (course == null) {
+        if (islands.isEmpty()) {
             return;
         }
         checkFalls();
@@ -111,10 +175,10 @@ public final class ParkourSession extends EventSession {
         }
         if (!collapsing) {
             tickWaiting(elapsed);
-        } else {
-            tickCollapsing();
+        } else if (pausedBetweenIslands && pauseSecondsLeft > 0) {
+            pauseSecondsLeft--;
         }
-        sendCounter(elapsed, remaining);
+        sendCounter(remaining);
     }
 
     private void tickWaiting(int elapsed) {
@@ -134,82 +198,200 @@ public final class ParkourSession extends EventSession {
     private void beginCollapse() {
         collapsing = true;
         broadcast("event.parkour.collapse-start");
-        forEachParticipantOnline(player -> {
-            context.getTitles().showTitle(player, config.getStartTitle());
-            context.getSounds().play(player, "event-start");
-        });
-        collapseTask = context.getScheduler().syncTimer(this::collapseStep,
-                config.getIntervalTicks(), config.getIntervalTicks());
-    }
-
-    private void tickCollapsing() {
-        collapseElapsedSeconds++;
-        if (config.getSpeedUpEverySeconds() > 0 && config.getSpeedUpAmount() > 0
-                && collapseElapsedSeconds % config.getSpeedUpEverySeconds() == 0) {
-            blocksPerStep = Math.min(config.getMaxBlocksPerStep(), blocksPerStep + config.getSpeedUpAmount());
-        }
+        forEachAliveOnline(player -> context.getTitles().showTitle(player, config.getStartTitle()));
+        startIsland(0);
     }
 
     /**
-     * Un paso del colapso: elimina el siguiente lote de bloques de la
-     * lista pre-ordenada y reproduce un unico sonido en el frente de
-     * colapso para los jugadores cercanos.
+     * Comienza la desintegracion progresiva de la isla indicada, con el
+     * intervalo acelerado segun el multiplicador por isla.
      */
+    private void startIsland(int index) {
+        this.currentIsland = index;
+        this.islandCursor = 0;
+        this.currentStepInterval = Math.max(1L, Math.round(
+                config.getStepIntervalTicks() * Math.pow(config.getIslandSpeedMultiplier(), index)));
+        this.stepTask = context.getScheduler().syncTimer(this::collapseStep,
+                currentStepInterval, currentStepInterval);
+    }
+
     private void collapseStep() {
-        if (getState() != EventState.RUNNING) {
+        if (getState() != EventState.RUNNING || currentIsland >= islands.size()) {
             return;
         }
+        List<BlockState> island = islands.get(currentIsland);
+        Location last = null;
         int removed = 0;
-        Location front = null;
-        while (removed < blocksPerStep && cursor < blocks.size()) {
-            Block block = blocks.get(cursor).getBlock();
-            cursor++;
-            if (block.getType() != Material.AIR) {
-                block.setType(Material.AIR);
-                front = block.getLocation();
+        while (removed < config.getBlocksPerStep() && islandCursor < island.size()) {
+            Block block = island.get(islandCursor).getBlock();
+            islandCursor++;
+            // Cada bloque capturado que sale de la lista cuenta para el
+            // progreso, aunque la fisica vanilla (arena que cae, hojas
+            // que se descomponen, pastos que se sueltan) lo haya vaciado
+            // antes de su turno: asi el porcentaje siempre llega a 100.
+            brokenBlocks++;
+            Material previousType = block.getType();
+            if (previousType != Material.AIR) {
+                // Sin fisica: los bloques vecinos no reaccionan (la
+                // arena no cae, nada se suelta ni deja drops).
+                XBlock.setType(block, XMaterial.AIR, false);
+                if (config.isBreakEffect()) {
+                    playBlockBreakEffect(block, previousType);
+                }
+                last = block.getLocation();
                 removed++;
             }
         }
-        if (front != null && config.isCollapseSoundEnabled()) {
-            playCollapseSound(front);
+        if (last != null) {
+            playCollapseSound(last);
         }
-        if (cursor >= blocks.size()) {
-            cancelCollapseTask();
+        if (islandCursor >= island.size()) {
+            finishIsland();
         }
     }
 
-    private void playCollapseSound(Location front) {
-        double radiusSq = (double) config.getCollapseSoundRadius() * config.getCollapseSoundRadius();
+    private void finishIsland() {
+        if (stepTask != null) {
+            stepTask.cancel();
+            stepTask = null;
+        }
+        int finished = currentIsland + 1;
+        if (config.isAnnounceIslands()) {
+            broadcast("event.parkour.island-collapsed",
+                    Placeholder.unparsed("island", String.valueOf(finished)));
+        }
+        int next = currentIsland + 1;
+        if (next >= islands.size()) {
+            return;
+        }
+        long delayTicks = Math.max(1L, config.delayAfterIsland(finished));
+        this.nextIslandNumber = next + 1;
+        this.pausedBetweenIslands = true;
+        this.longPause = config.hasDelayOverride(finished);
+        this.pauseSecondsLeft = (int) Math.ceil(delayTicks / 20.0);
+        if (config.hasDelayOverride(finished)) {
+            // Pausa especial configurada: se anuncia para que los
+            // jugadores sepan cuanto falta para la proxima isla.
+            broadcast("event.parkour.long-pause",
+                    Placeholder.unparsed("island", String.valueOf(nextIslandNumber)),
+                    Placeholder.unparsed("time", TimeUtil.formatSeconds(Math.max(1, pauseSecondsLeft))));
+        }
+        context.getScheduler().syncLater(() -> {
+            pausedBetweenIslands = false;
+            longPause = false;
+            pauseSecondsLeft = 0;
+            if (getState() == EventState.RUNNING) {
+                startIsland(next);
+            }
+        }, delayTicks);
+    }
+
+    private void playCollapseSound(Location at) {
+        if (!config.isCollapseSoundEnabled()) {
+            return;
+        }
+        int radius = config.getCollapseSoundRadius();
         context.getSounds().get("parkour-collapse").ifPresent(sound ->
                 forEachAliveOnline(player -> {
-                    if (player.getWorld().equals(front.getWorld())
-                            && player.getLocation().distanceSquared(front) <= radiusSq) {
-                        sound.play(player, front);
+                    if (player.getWorld().equals(at.getWorld())
+                            && player.getLocation().distanceSquared(at) <= (double) radius * radius) {
+                        sound.play(player, at);
                     }
                 }));
     }
 
-    private void cancelCollapseTask() {
-        if (collapseTask != null) {
-            collapseTask.cancel();
-            collapseTask = null;
+    // ------------------------------------------------------------------
+    // Caidas, HUD y cierre
+    // ------------------------------------------------------------------
+
+    private void checkFalls() {
+        int threshold = lowestY - config.getFallDistance();
+        List<Player> fallen = new ArrayList<>();
+        forEachAliveOnline(player -> {
+            Location location = player.getLocation();
+            if (location.getWorld() != null
+                    && location.getWorld().equals(courseWorld)
+                    && location.getY() < threshold) {
+                fallen.add(player);
+            }
+        });
+        for (Player player : fallen) {
+            eliminate(player);
         }
     }
 
     @Override
+    protected void onPlayerEliminated(Player player) {
+        Location spawn = resolveStartLocation();
+        if (spawn != null) {
+            player.teleport(spawn);
+        }
+        applySpectatorState(player);
+        context.getMessages().send(player, "event.parkour.eliminated-info");
+    }
+
+    private void sendCounter(int remaining) {
+        String format;
+        String time;
+        if (!collapsing) {
+            format = config.getActionbarWaiting();
+            time = TimeUtil.formatSeconds(Math.max(0, config.getStartDelaySeconds() - getElapsedSeconds()));
+        } else if (pausedBetweenIslands && longPause) {
+            // Solo las pausas especiales cambian la actionbar: las
+            // pausas cortas por defecto mantienen el formato estable.
+            format = config.getActionbarPause();
+            time = TimeUtil.formatSeconds(Math.max(0, pauseSecondsLeft));
+        } else {
+            format = config.getActionbarCollapsing();
+            time = TimeUtil.formatSeconds(Math.max(0, remaining));
+        }
+        String island = Math.min(currentIsland + 1, islands.size()) + "/" + islands.size();
+        TagResolver[] resolvers = {
+                Placeholder.unparsed("time", time),
+                Placeholder.unparsed("island", island),
+                Placeholder.unparsed("next", String.valueOf(nextIslandNumber)),
+                Placeholder.unparsed("progress", String.valueOf(progressPercent())),
+                Placeholder.unparsed("alive", String.valueOf(getAliveCount()))
+        };
+        forEachParticipantOnline(player -> context.getTitles().sendActionBar(player, format, resolvers));
+    }
+
+    /**
+     * Porcentaje de bloques del recorrido ya desintegrados, para el
+     * placeholder {@code <progress>} del HUD y las actionbars.
+     */
+    private int progressPercent() {
+        if (totalBlocks <= 0) {
+            return 0;
+        }
+        return Math.min(100, brokenBlocks * 100 / totalBlocks);
+    }
+
+    @Override
+    protected List<TagResolver> extraHudResolvers() {
+        String island = islands.isEmpty() ? "0/0"
+                : Math.min(currentIsland + 1, islands.size()) + "/" + islands.size();
+        List<TagResolver> resolvers = new ArrayList<>(2);
+        resolvers.add(Placeholder.unparsed("island", island));
+        resolvers.add(Placeholder.unparsed("progress", String.valueOf(progressPercent())));
+        return resolvers;
+    }
+
+    @Override
     protected void onEnd(EventEndReason reason) {
-        cancelCollapseTask();
-        restoreBlocks();
+        if (stepTask != null) {
+            stepTask.cancel();
+            stepTask = null;
+        }
+        for (List<BlockState> island : islands) {
+            for (BlockState state : island) {
+                state.update(true, false);
+            }
+        }
+        islands.clear();
         if (reason == EventEndReason.TIMEOUT) {
             announceSurvivors();
         }
-    }
-
-    private void restoreBlocks() {
-        for (BlockState state : blocks) {
-            state.update(true, false);
-        }
-        blocks.clear();
     }
 
     private void announceSurvivors() {
@@ -225,55 +407,6 @@ public final class ParkourSession extends EventSession {
             context.getMessages().broadcast("event.parkour.winners",
                     Placeholder.unparsed("winners", winners.toString()));
         }
-    }
-
-    // ------------------------------------------------------------------
-    // Caidas y eliminaciones
-    // ------------------------------------------------------------------
-
-    private void checkFalls() {
-        int threshold = course.getMinY() - config.getFallDistance();
-        List<Player> fallen = new ArrayList<>();
-        forEachAliveOnline(player -> {
-            Location location = player.getLocation();
-            if (location.getWorld() != null
-                    && location.getWorld().getName().equalsIgnoreCase(course.getWorldName())
-                    && location.getY() < threshold) {
-                fallen.add(player);
-            }
-        });
-        for (Player player : fallen) {
-            eliminate(player);
-        }
-    }
-
-    @Override
-    protected void onPlayerEliminated(Player player) {
-        Location spawn = resolvePoint(getStartPointKey());
-        if (spawn != null) {
-            player.teleport(spawn);
-        }
-        applySpectatorState(player);
-        context.getMessages().send(player, "event.parkour.eliminated-info");
-    }
-
-    private void sendCounter(int elapsed, int remaining) {
-        String format;
-        String time;
-        if (!collapsing) {
-            format = config.getActionbarWaiting();
-            time = TimeUtil.formatSeconds(Math.max(0, config.getStartDelaySeconds() - elapsed));
-        } else {
-            format = config.getActionbarCollapsing();
-            time = TimeUtil.formatSeconds(Math.max(0, remaining));
-        }
-        int progress = blocks.isEmpty() ? 0 : Math.min(100, cursor * 100 / blocks.size());
-        TagResolver[] resolvers = {
-                Placeholder.unparsed("time", time),
-                Placeholder.unparsed("progress", String.valueOf(progress)),
-                Placeholder.unparsed("alive", String.valueOf(getAliveCount()))
-        };
-        forEachParticipantOnline(player -> context.getTitles().sendActionBar(player, format, resolvers));
     }
 
     // ------------------------------------------------------------------

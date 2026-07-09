@@ -65,6 +65,7 @@ scoreboards:
       - "<gray>Vivos: <green><players>"
       - "<gray>Eliminados: <red><spectators>"
       - ""
+      - "<gray>Isla: <red><island> <dark_gray>(<gray><progress>%<dark_gray>)"
       - "<gray>Tiempo: <yellow><time>"
       - ""
       - "<aqua>play.tuservidor.com"

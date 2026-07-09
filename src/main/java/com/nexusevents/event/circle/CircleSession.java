@@ -1,5 +1,6 @@
 package com.nexusevents.event.circle;
 
+import com.cryptomorin.xseries.XBlock;
 import com.cryptomorin.xseries.XMaterial;
 import com.nexusevents.arena.Arena;
 import com.nexusevents.arena.ArenaKeys;
@@ -256,7 +257,13 @@ public final class CircleSession extends EventSession {
         }
         int target = (int) randomBetween(config.getBreakMinBlocks(), currentMaxBlocks);
         for (Block block : collectCluster(seed, target)) {
-            block.setType(Material.AIR);
+            Material previousType = block.getType();
+            // Sin fisica: evita caidas de arena, desprendimientos y
+            // drops que desvirtuen el conteo y ensucien el piso.
+            XBlock.setType(block, XMaterial.AIR, false);
+            if (config.isBreakEffect()) {
+                playBlockBreakEffect(block, previousType);
+            }
             brokenBlocks++;
         }
         playBreakSound(seed.getLocation());

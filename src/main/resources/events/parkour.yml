@@ -1,71 +1,100 @@
 # ============================================================
-#  NexusEvents - Parkour Colapsable
+#  NexusEvents - Parkour por Islas
 #
-#  La region del recorrido se define con /evento setparkour
-#  (debe abarcar todo el parkour). El spawn de la arena marca el
-#  INICIO del recorrido: el colapso avanza desde alli siguiendo
-#  la forma real del parkour, aunque sea curvo.
+#  El recorrido se arma con fragmentos (islas) ORDENADOS:
+#    /evento parkour pos1   (parado en una esquina)
+#    /evento parkour pos2   (parado en la otra)
+#    /evento parkour add    (guarda el fragmento siguiente)
+#    /evento parkour remove (n) | list | clear
+#
+#  En la partida, las islas se desintegran una por una en ese
+#  mismo orden, cada una de forma PROGRESIVA (punados de bloques
+#  al azar), con pausa entre islas y aceleracion opcional.
+#  Todo se restaura al finalizar.
 #
 #  Duraciones: aceptan sufijos t (ticks), s, m, h.
 # ============================================================
 
 settings:
-  # Ventaja inicial antes de que empiece el colapso.
+  # Ventaja inicial antes de que caiga la primera isla.
   start-delay: "10s"
 
-  # Duracion maxima del evento. Si nadie gana antes, los que
-  # sigan en pie ganan por supervivencia.
+  # Duracion maxima del evento.
   max-duration: "5m"
 
-  # Si es true, el evento termina cuando queda un unico jugador
-  # vivo (ganador). Con false, solo termina por tiempo.
-  win-when-one-remains: true
-
-  # Bloques por debajo del recorrido a partir de los cuales un
-  # jugador cuenta como caido.
+  # Bloques por debajo de la isla mas baja a partir de los
+  # cuales un jugador cuenta como caido.
   fall-distance: 4
 
-# --- Motor de colapso (optimizado: el recorrido desaparece en
-#     lotes pequenos a intervalos, nunca todo en un mismo tick) ---
+  # true: el ultimo jugador en pie gana de inmediato.
+  # false: se juega hasta agotar el tiempo (ganan los vivos).
+  win-when-one-remains: true
+
+# --- Desintegracion progresiva ---
 collapse:
-  # Cada cuanto se elimina un lote de bloques.
-  interval: "5t"
+  # Bloques (al azar dentro de la isla) eliminados por paso.
+  blocks-per-step: 2
 
-  # Bloques eliminados por lote al comenzar.
-  blocks-per-step: 4
+  # Ticks entre pasos dentro de una isla (20 ticks = 1s).
+  # Menor = desintegracion mas rapida.
+  step-interval: "4t"
 
-  # Aceleracion: cada este tiempo, el lote crece en la cantidad
-  # indicada, hasta el tope. (0 en cualquiera = sin aceleracion)
-  speed-up-every: "15s"
-  speed-up-amount: 2
-  max-blocks-per-step: 40
+  # Pausa POR DEFECTO entre el final de una isla y el comienzo de
+  # la siguiente.
+  island-delay: "2s"
 
-  # Sonido en el frente de colapso (clave de sounds.yml:
-  # parkour-collapse), audible dentro del radio indicado.
-  sound:
-    enabled: true
-    radius: 24
+  # Animacion de rotura (particulas + sonido del bloque) por cada
+  # bloque desintegrado.
+  break-effect: true
+
+  # Anunciar por chat cada isla desintegrada. Desactivado por
+  # defecto: la actionbar y el scoreboard ya muestran el avance,
+  # y en recorridos de islas chicas el chat se llenaria de spam.
+  announce-island-collapse: false
+
+  # Pausas ESPECIALES despues de islas concretas. La clave es el
+  # numero de la isla que acaba de caer; el valor, cuanto esperar
+  # antes de que empiece la siguiente. Ejemplo: al caer la isla 6,
+  # esperar 2 minutos antes de la 7; al caer la 12, 1 minuto antes
+  # de la 13. Descomentar para usar:
+  # island-delays:
+  #   6: "2m"
+  #   12: "1m"
+
+  # Aceleracion por isla: el intervalo de pasos se multiplica
+  # por este valor en cada isla sucesiva (0.9 = cada isla cae
+  # un 10% mas rapido; 1.0 = velocidad constante).
+  island-speed-multiplier: 0.9
+
+# Sonido de rotura, audible en el radio indicado.
+sound:
+  enabled: true
+  radius: 24
 
 titles:
-  # Aviso en los ultimos 3 segundos previos al colapso.
+  # Aviso en los ultimos 3 segundos de la ventaja inicial.
   # Placeholder: <seconds>
   warning:
     title: "<yellow><bold><seconds>"
-    subtitle: "<gray>El recorrido empieza a colapsar..."
+    subtitle: "<gray>El recorrido empieza a desintegrarse..."
     fade-in: 0
     stay: 25
     fade-out: 5
     enabled: true
   start:
-    title: "<red><bold>¡COLAPSO!"
-    subtitle: "<gray>¡Corré por tu vida!"
+    title: "<red><bold>¡EL RECORRIDO COLAPSA!"
+    subtitle: "<gray>Las islas caen en orden: ¡corré!"
     fade-in: 0
     stay: 40
     fade-out: 10
     enabled: true
 
 # Contador visible (actionbar, cada segundo).
-# Placeholders: <time>, <progress> (% colapsado), <alive>
+# Placeholders: <time>, <island> (actual/total), <next> (proxima
+# isla, en pausas), <progress> (% del recorrido desintegrado),
+# <alive>
 actionbar:
-  waiting: "<gray>El colapso comienza en <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>"
-  collapsing: "<gray>Colapsado: <red><progress>% <dark_gray>| <gray>Vivos: <green><alive> <dark_gray>| <gray>Tiempo: <yellow><time>"
+  waiting: "<gray>El colapso empieza en <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>"
+  collapsing: "<gray>Isla: <red><island> <dark_gray>| <gray>Vivos: <green><alive> <dark_gray>| <gray>Tiempo: <yellow><time>"
+  # Mostrada durante la pausa entre islas.
+  pause: "<gray>Isla <yellow>#<next></yellow> en <yellow><time> <dark_gray>| <gray>Vivos: <green><alive>"

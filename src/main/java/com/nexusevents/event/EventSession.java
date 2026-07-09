@@ -9,6 +9,9 @@ import fr.mrmicky.fastboard.FastBoard;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
+import org.bukkit.Effect;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.boss.BossBar;
@@ -53,6 +56,8 @@ public abstract class EventSession {
 
     private BossBar bossBar;
     private boolean scoreboardBroken;
+    private boolean breakEffectUnavailable;
+    private Integer safetyMinY;
 
     private EventState state = EventState.WAITING;
     private BukkitTask ticker;
@@ -79,6 +84,7 @@ public abstract class EventSession {
             this.bossBar = Bukkit.createBossBar("", settings().getBossBarColor(), settings().getBossBarStyle());
         }
         this.lobbySecondsLeft = settings().getLobbyTimeoutSeconds();
+        this.safetyMinY = resolveSafetyMinY();
         this.ticker = context.getScheduler().syncTimer(this::tick, 20L, 20L);
         context.getMessages().broadcast("event.announce-open",
                 Placeholder.parsed("event", displayName()),
@@ -101,7 +107,75 @@ public abstract class EventSession {
         }
         if (state != EventState.ENDING) {
             reapplySpectators();
+            applySafetyNet();
             updateHud();
+        }
+    }
+
+    /**
+     * Red de seguridad de altura: si la arena define una altura minima
+     * (propiedad min-y, con variante por evento), los ELIMINADOS y los
+     * participantes ANTES de comenzar que caigan debajo vuelven al
+     * lobby del evento. Los vivos durante la partida quedan a cargo de
+     * las reglas de cada evento (caer suele eliminar).
+     */
+    private void applySafetyNet() {
+        if (safetyMinY == null) {
+            return;
+        }
+        Location lobby = resolveEventPoint(ArenaKeys.LOBBY);
+        if (lobby == null || lobby.getWorld() == null) {
+            return;
+        }
+        List<Player> falling = new ArrayList<>();
+        forEachParticipantOnline(player -> {
+            boolean covered = eliminated.contains(player.getUniqueId()) || state != EventState.RUNNING;
+            if (covered
+                    && lobby.getWorld().equals(player.getWorld())
+                    && player.getLocation().getY() < safetyMinY) {
+                falling.add(player);
+            }
+        });
+        for (Player player : falling) {
+            player.teleport(lobby);
+            context.getMessages().send(player, "event.safety-teleport");
+        }
+    }
+
+    private Integer resolveSafetyMinY() {
+        String raw = arena.getProperty(ArenaKeys.MIN_Y + "_" + type.getId())
+                .orElseGet(() -> arena.getProperty(ArenaKeys.MIN_Y).orElse(null));
+        if (raw == null) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException exception) {
+            context.getPlugin().getLogger().warning("Altura minima invalida '" + raw
+                    + "' en la arena '" + arena.getName() + "': se ignora.");
+            return null;
+        }
+    }
+
+    /**
+     * Reproduce la animacion clasica de rotura (particulas del bloque +
+     * su sonido) en la posicion dada. Compatible desde 1.9; si la
+     * version del servidor no la soporta, se desactiva sola con un
+     * aviso, sin afectar el evento.
+     *
+     * @param block bloque recien vaciado.
+     * @param type  material que tenia el bloque.
+     */
+    protected final void playBlockBreakEffect(Block block, Material type) {
+        if (breakEffectUnavailable || type == Material.AIR) {
+            return;
+        }
+        try {
+            block.getWorld().playEffect(block.getLocation(), Effect.STEP_SOUND, type);
+        } catch (Throwable throwable) {
+            breakEffectUnavailable = true;
+            context.getPlugin().getLogger().warning(
+                    "La animacion de rotura no esta disponible en esta version: se desactiva. Causa: " + throwable);
         }
     }
 

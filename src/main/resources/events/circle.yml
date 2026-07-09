@@ -64,6 +64,10 @@ break:
   speed-up-every: "20s"
   max-blocks-cap: 12
 
+  # Animacion de rotura (particulas + sonido del bloque) por cada
+  # bloque del piso que se rompe.
+  effect: true
+
 # Borde visual del circulo (solo estetico).
 particles:
   enabled: true

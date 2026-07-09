@@ -39,6 +39,7 @@ public final class CircleConfig {
     private final int breakMaxBlocks;
     private final int speedUpEverySeconds;
     private final int maxBlocksCap;
+    private final boolean breakEffect;
 
     private final Particle borderParticle;
     private final int particlePoints;
@@ -55,7 +56,7 @@ public final class CircleConfig {
                          double knockbackHorizontal, double knockbackVertical,
                          long breakMinDelayTicks, long breakMaxDelayTicks,
                          int breakMinBlocks, int breakMaxBlocks,
-                         int speedUpEverySeconds, int maxBlocksCap,
+                         int speedUpEverySeconds, int maxBlocksCap, boolean breakEffect,
                          Particle borderParticle, int particlePoints, int particleRings,
                          TitleConfig warningTitle, TitleConfig startTitle,
                          String actionbarWaiting, String actionbarPlaying) {
@@ -76,6 +77,7 @@ public final class CircleConfig {
         this.breakMaxBlocks = breakMaxBlocks;
         this.speedUpEverySeconds = speedUpEverySeconds;
         this.maxBlocksCap = maxBlocksCap;
+        this.breakEffect = breakEffect;
         this.borderParticle = borderParticle;
         this.particlePoints = particlePoints;
         this.particleRings = particleRings;
@@ -115,6 +117,7 @@ public final class CircleConfig {
                 maxBlocks,
                 TimeUtil.parseSeconds(file.getString("break.speed-up-every", ""), 20),
                 Math.max(maxBlocks, file.getInt("break.max-blocks-cap", 12)),
+                file.getBoolean("break.effect", true),
                 parseParticle(file, logger),
                 Math.max(8, file.getInt("particles.points", 60)),
                 Math.max(1, file.getInt("particles.rings", 2)),
@@ -229,6 +232,16 @@ public final class CircleConfig {
 
     public int getMaxBlocksCap() {
         return maxBlocksCap;
+    }
+
+    /**
+     * Animacion de rotura (particulas + sonido del bloque) por cada
+     * bloque del piso que se rompe.
+     *
+     * @return true si esta activada.
+     */
+    public boolean isBreakEffect() {
+        return breakEffect;
     }
 
     /**

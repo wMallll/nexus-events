@@ -46,7 +46,7 @@ public final class ParkourEvent implements GameEvent {
 
     @Override
     public List<String> getRequiredRegions() {
-        return Collections.singletonList(ArenaKeys.REGION_PARKOUR);
+        return Collections.singletonList(ArenaKeys.PARKOUR_FRAGMENT_PREFIX + 1);
     }
 
     @Override

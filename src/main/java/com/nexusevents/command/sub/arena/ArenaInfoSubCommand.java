@@ -85,6 +85,11 @@ public final class ArenaInfoSubCommand extends SubCommand {
     }
 
     private String displayName(String basePath, String key) {
+        if (key.startsWith(com.nexusevents.arena.ArenaKeys.PARKOUR_FRAGMENT_PREFIX)) {
+            String number = key.substring(com.nexusevents.arena.ArenaKeys.PARKOUR_FRAGMENT_PREFIX.length());
+            return messages.rawOr("arena.region-names.parkour-fragment", "Fragmento de Parkour")
+                    + " <gray>#" + number;
+        }
         int separator = key.indexOf('_');
         if (separator > 0) {
             String base = key.substring(0, separator);

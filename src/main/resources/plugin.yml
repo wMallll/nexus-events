@@ -38,9 +38,15 @@ permissions:
       evento.setup.sethunterspawn: true
       evento.setup.setcircle: true
       evento.setup.setpixelparty: true
-      evento.setup.setparkour: true
+      evento.setup.parkour: true
+      evento.world: true
+      evento.menu: true
+      evento.tpdead: true
+      evento.disqualify: true
+      evento.dqstick: true
       evento.setup.save: true
       evento.setup.setmainlobby: true
+      evento.setup.setminy: true
       evento.lockout: true
       evento.start: true
       evento.stop: true
@@ -83,14 +89,32 @@ permissions:
   evento.setup.setpixelparty:
     description: Permite definir la plataforma de Pixel Party.
     default: op
-  evento.setup.setparkour:
-    description: Permite definir la zona de Parkour.
+  evento.setup.parkour:
+    description: Permite armar el recorrido del Parkour por fragmentos.
+    default: op
+  evento.world:
+    description: Permite administrar los mundos del plugin.
+    default: op
+  evento.menu:
+    description: Permite abrir el menu principal del plugin.
+    default: true
+  evento.tpdead:
+    description: Permite traer a todos los eliminados hasta el ejecutor.
+    default: op
+  evento.disqualify:
+    description: Permite descalificar participantes.
+    default: op
+  evento.dqstick:
+    description: Permite recibir y usar el Palo Descalificador.
     default: op
   evento.setup.save:
     description: Permite guardar todas las arenas.
     default: op
   evento.setup.setmainlobby:
     description: Permite fijar el lobby global de primer ingreso.
+    default: op
+  evento.setup.setminy:
+    description: Permite fijar la altura minima de seguridad.
     default: op
   evento.lockout:
     description: Permite controlar el modo torneo (bloqueo de eliminados).

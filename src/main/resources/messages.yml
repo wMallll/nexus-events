@@ -38,9 +38,13 @@ arena:
   mainlobby-set: "<prefix><green>Lobby global establecido. Los jugadores nuevos aparecerán acá en su primer ingreso."
   circle-usage: "<prefix><red>Usá: <gray>/evento setcircle (radio)</gray> parado en el centro del piso circular (radio entre <min> y <max>)."
   circle-set: "<prefix><green>Círculo establecido en la arena <yellow><arena></yellow>: centro en tu posición, radio <yellow><radius></yellow> bloques."
+  miny-set: "<prefix><green>Altura mínima fijada en <yellow>Y=<y></yellow> (<scope>): quien caiga debajo vuelve al lobby."
+  miny-scope-general: "general de la arena"
+  miny-scope-main: "Lobby global"
   info-property: " <dark_gray>• <gray><property>: <yellow><value>"
   property-names:
     circle-radius: "Radio del círculo"
+    min-y: "Altura mínima"
   point-set: "<prefix><green><point> establecido en la arena <yellow><arena></yellow>."
   region-usage: "<prefix><red>Usá: <gray><usage></gray> parado en la esquina correspondiente."
   region-corner-set: "<prefix><green>Esquina <yellow><corner></yellow> marcada para <yellow><region></yellow>. <gray>Marcá la otra esquina para completar."
@@ -60,7 +64,8 @@ arena:
     circle-center: "Centro del círculo"
   region-names:
     pixel-party: "Plataforma de Pixel Party"
-    parkour: "Zona de Parkour"
+    parkour-fragment: "Fragmento de Parkour"
+    parkour-fragment-1: "Primer fragmento del Parkour (/evento parkour)"
 
 event:
   names:
@@ -95,6 +100,7 @@ event:
   full: "<prefix><red>El evento está lleno."
   already-started: "<prefix><red>Ese evento ya comenzó, no podés entrar."
   locked-out: "<prefix><red>Estás eliminado del evento oficial: no podés participar hasta el próximo."
+  safety-teleport: "<prefix><gray>Caíste demasiado: te devolvimos al lobby."
   not-in: "<prefix><red>No estás participando de ningún evento."
   countdown-start: "<prefix><yellow>¡El evento comienza en <seconds> segundos!"
   countdown-aborted: "<prefix><red>No hay suficientes jugadores. Esperando más participantes..."
@@ -140,7 +146,10 @@ event:
       - "<prefix><gold><bold>¡Fin del tiempo!</bold> <gray>Ganadores: <yellow><winners>"
       - ""
   parkour:
-    collapse-start: "<prefix><red><bold>¡El recorrido está colapsando desde el inicio!"
+    islands-info: "<prefix><gray>Recorrido de <yellow><count></yellow> islas: caen en orden, ¡no te quedes atrás!"
+    collapse-start: "<prefix><red><bold>¡Las islas empezaron a desintegrarse!"
+    island-collapsed: "<prefix><gray>La isla <yellow>#<island></yellow> se desintegró por completo."
+    long-pause: "<prefix><gold>Pausa: <gray>la isla <yellow>#<island></yellow> se desintegrará en <yellow><time></yellow>."
     eliminated-info:
       - "<prefix><red>¡Caíste! Quedaste eliminado."
       - "<prefix><gray>Ahora sos invisible y podés volar para mirar el evento."
@@ -180,10 +189,16 @@ help:
     sethunterspawn: "Fija el spawn del cazador en tu posición."
     setcircle: "Fija el centro y el radio del círculo (parado en el centro)."
     setpixelparty: "Marca las esquinas de la plataforma de Pixel Party."
-    setparkour: "Marca las esquinas de la zona de Parkour."
     save: "Guarda todas las arenas en disco."
     setmainlobby: "Fija el lobby global de primer ingreso."
+    parkour: "Arma el recorrido del Parkour por fragmentos (islas)."
+    world: "Gestor de mundos vacíos del plugin."
+    menu: "Abre el menú principal con TODAS las funciones."
+    tpdead: "Trae a todos los eliminados hasta vos."
+    disqualify: "Descalifica a un participante vivo."
+    dqstick: "Te da el Palo Descalificador."
     lockout: "Controla el modo torneo: on, off o clear."
+    setminy: "Fija la altura mínima de seguridad (tu Y actual)."
     start: "Inicia un evento en una arena."
     stop: "Detiene un evento activo."
     join: "Entrá a un evento activo."
@@ -201,3 +216,71 @@ lockout:
   status: "<prefix><gray>Modo torneo: <state> <dark_gray>| <gray>Bloqueados: <yellow><count>"
   state-on: "<green>ACTIVADO"
   state-off: "<red>desactivado"
+
+# --- Setup del Parkour por islas ---
+parkour-setup:
+  usage: "<prefix><red>Usá: <gray>/evento parkour (pos1|pos2|add|remove (n)|list|clear)"
+  pos-set: "<prefix><green>Posición <yellow><corner></yellow> del fragmento marcada en tu ubicación."
+  need-positions: "<prefix><red>Primero marcá las dos esquinas con <gray>/evento parkour pos1</gray> y <gray>pos2</gray>."
+  different-worlds: "<prefix><red>Las dos posiciones deben estar en el mismo mundo."
+  fragment-added: "<prefix><green>Fragmento <yellow>#<index></yellow> agregado (<dimensions>) a la arena <yellow><arena></yellow>. Marcá el siguiente."
+  fragment-removed: "<prefix><green>Fragmento <yellow>#<index></yellow> eliminado. Quedan <yellow><count></yellow> (renumerados)."
+  fragment-not-found: "<prefix><red>Ese fragmento no existe. Hay <yellow><count></yellow>; mirá <gray>/evento parkour list</gray>."
+  list-header: "<prefix><gray>Fragmentos de <yellow><arena></yellow> (<count>), en orden de desintegración:"
+  list-entry: " <dark_gray>#<index> <gray><dimensions>"
+  list-empty: "<prefix><gray>La arena no tiene fragmentos todavía. Empezá con <yellow>/evento parkour pos1</yellow>."
+  cleared: "<prefix><green>Se eliminaron <yellow><count></yellow> fragmentos."
+
+# --- Gestor de mundos ---
+world:
+  usage:
+    - "<prefix><gray>Gestor de mundos:"
+    - " <dark_gray>• <yellow>/evento world create (nombre) [normal|nether|end]"
+    - " <dark_gray>• <yellow>/evento world tp (nombre) <dark_gray>· <yellow>list <dark_gray>· <yellow>load (nombre)"
+    - " <dark_gray>• <yellow>/evento world set (nombre) (opción) (valor)"
+    - " <dark_gray>• <yellow>/evento world setspawn <dark_gray>· <yellow>delete (nombre) confirm"
+  creating: "<prefix><gray>Creando el mundo <yellow><world></yellow>..."
+  created: "<prefix><green>Mundo <yellow><world></yellow> creado: vacío, sin mobs, siempre de día y sin lluvia. Configuralo con <gray>/evento world set</gray>."
+  create-failed: "<prefix><red>No se pudo crear el mundo <yellow><world></yellow>. Revisá la consola."
+  exists: "<prefix><red>Ya existe un mundo llamado <yellow><world></yellow>."
+  invalid-name: "<prefix><red>Nombre inválido: letras, números, guiones y guiones bajos (máx. 32)."
+  invalid-environment: "<prefix><red>Entorno inválido. Usá: <gray>normal</gray>, <gray>nether</gray> o <gray>end</gray>."
+  not-found: "<prefix><red>No hay ningún mundo del plugin llamado <yellow><world></yellow>. Mirá <gray>/evento world list</gray>."
+  teleported: "<prefix><green>Teletransportado al mundo <yellow><world></yellow>."
+  loaded: "<prefix><green>Mundo <yellow><world></yellow> cargado."
+  load-failed: "<prefix><red>No se pudo cargar el mundo <yellow><world></yellow>. Revisá la consola."
+  list-header: "<prefix><gray>Mundos del plugin (<count>):"
+  list-entry: " <dark_gray>• <yellow><world> <dark_gray>(<gray><environment><dark_gray>) <status>"
+  list-empty: "<prefix><gray>No hay mundos del plugin. Creá uno con <yellow>/evento world create (nombre)</yellow>."
+  status-loaded: "<green>cargado"
+  status-unloaded: "<red>descargado"
+  set-usage: "<prefix><red>Usá: <gray>/evento world set (mundo) (opción) (valor)</gray>. Opciones: <yellow><options></yellow>."
+  setting-updated: "<prefix><green>Mundo <yellow><world></yellow>: <gray><setting></gray> = <yellow><value></yellow> (aplicado y guardado)."
+  spawn-set: "<prefix><green>Spawn del mundo <yellow><world></yellow> fijado en tu posición."
+  spawn-must-stand: "<prefix><red>Tenés que estar parado dentro del mundo del plugin cuyo spawn querés fijar."
+  delete-confirm: "<prefix><red>Esto borra el mundo <yellow><world></yellow> y su carpeta DEFINITIVAMENTE. Confirmá con: <gray>/evento world delete <world> confirm"
+  deleted: "<prefix><green>Mundo <yellow><world></yellow> eliminado del servidor y del disco."
+  delete-failed: "<prefix><red>No se pudo descargar/eliminar el mundo <yellow><world></yellow>."
+  main-world: "<prefix><red>No se puede eliminar el mundo principal del servidor."
+  player-only: "<prefix><red>Esa acción solo puede ejecutarla un jugador."
+
+# --- Moderacion ---
+moderation:
+  tpdead-done: "<prefix><green>Trajiste a <yellow><count></yellow> eliminados hasta tu posición."
+  tpdead-none: "<prefix><gray>No hay eliminados online en ninguna sesión activa."
+  disqualify-usage: "<prefix><red>Usá: <gray>/evento disqualify (jugador)"
+  player-not-found: "<prefix><red>El jugador <yellow><player></yellow> no está online."
+  not-in-event: "<prefix><red><player> no está participando en ningún evento."
+  already-eliminated: "<prefix><red><player> ya está eliminado."
+  disqualified: "<prefix><green>Descalificaste a <yellow><player></yellow>: ahora es espectador."
+  disqualified-target: "<prefix><red>Fuiste descalificado por un moderador. Quedás como espectador."
+  stick-given: "<prefix><green>Recibiste el <red><bold>Descalificador</bold></red>. Golpeá a un participante vivo para descalificarlo."
+  stick-no-permission: "<prefix><red>No tenés permiso para usar el Descalificador."
+  stick-not-participant: "<prefix><red><player> no es un participante vivo de ningún evento."
+
+# --- Menus ---
+menu:
+  no-sessions: "<prefix><gray>No hay eventos activos en este momento."
+  prompt-world-name: "<prefix><yellow>Escribí en el chat el <bold>nombre del mundo</bold> a crear (letras, números, - y _). Escribí <red>cancelar</red> para abortar."
+  prompt-arena-name: "<prefix><yellow>Escribí en el chat el <bold>nombre de la arena</bold> a crear. Escribí <red>cancelar</red> para abortar."
+  prompt-cancelled: "<prefix><gray>Acción cancelada."
