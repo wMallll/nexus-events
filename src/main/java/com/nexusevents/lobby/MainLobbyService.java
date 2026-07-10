@@ -1,6 +1,7 @@
 package com.nexusevents.lobby;
 
 import com.nexusevents.arena.ArenaLocation;
+import com.nexusevents.arena.Region;
 import com.nexusevents.configuration.ConfigManager;
 import com.nexusevents.configuration.ConfigurationFile;
 import com.nexusevents.manager.Manager;
@@ -33,6 +34,7 @@ public final class MainLobbyService implements Manager, Reloadable {
     public static final String FILE = "lobby.yml";
     private static final String PATH = "main-lobby";
     private static final String MIN_Y_PATH = "main-lobby-min-y";
+    private static final String REGION_PATH = "main-lobby-region";
     private static final long SAFETY_PERIOD_TICKS = 20L;
 
     private final JavaPlugin plugin;
@@ -42,6 +44,8 @@ public final class MainLobbyService implements Manager, Reloadable {
 
     private ArenaLocation lobby;
     private Integer minY;
+    private Region region;
+    private final LobbyProtectionSettings protection = new LobbyProtectionSettings();
     private Predicate<UUID> participantCheck = playerId -> false;
     private BukkitTask safetyTask;
 
@@ -110,8 +114,17 @@ public final class MainLobbyService implements Manager, Reloadable {
         }
         for (Player player : falling) {
             player.teleport(destination);
-            messages.send(player, "event.safety-teleport");
+            sendSafetyMessage(player);
         }
+    }
+
+    /**
+     * Envia el aviso estandar de la red de seguridad.
+     *
+     * @param player jugador rescatado.
+     */
+    public void sendSafetyMessage(Player player) {
+        messages.send(player, "event.safety-teleport");
     }
 
     /**
@@ -146,6 +159,127 @@ public final class MainLobbyService implements Manager, Reloadable {
         this.minY = configManager.getFile(FILE).get().contains(MIN_Y_PATH)
                 ? configManager.getFile(FILE).get().getInt(MIN_Y_PATH)
                 : null;
+        String rawRegion = configManager.getFile(FILE).get().getString(REGION_PATH, "");
+        if (rawRegion == null || rawRegion.isEmpty()) {
+            region = null;
+        } else {
+            try {
+                region = Region.deserialize(rawRegion);
+            } catch (IllegalArgumentException exception) {
+                plugin.getLogger().warning("lobby.yml contiene una region global invalida: se ignora.");
+                region = null;
+            }
+        }
+        protection.load(configManager.getFile(FILE).get().getConfigurationSection("protection"));
+    }
+
+    /**
+     * Define y persiste la region protegida del lobby global.
+     *
+     * @param region region marcada con pos1/pos2.
+     */
+    public void setRegion(Region region) {
+        this.region = region;
+        ConfigurationFile file = configManager.getFile(FILE);
+        file.get().set(REGION_PATH, region.serialize());
+        file.save();
+    }
+
+    /**
+     * Elimina la region protegida (las protecciones dejan de actuar).
+     */
+    public void removeRegion() {
+        this.region = null;
+        ConfigurationFile file = configManager.getFile(FILE);
+        file.get().set(REGION_PATH, null);
+        file.save();
+    }
+
+    /**
+     * Region protegida del lobby global, si esta definida.
+     *
+     * @return region configurada.
+     */
+    public Optional<Region> getRegion() {
+        return Optional.ofNullable(region);
+    }
+
+    /**
+     * Altura minima del lobby global, si esta configurada.
+     *
+     * @return altura minima.
+     */
+    public Optional<Integer> getMinY() {
+        return Optional.ofNullable(minY);
+    }
+
+    /**
+     * Protecciones activas de la region del lobby.
+     *
+     * @return configuracion de protecciones.
+     */
+    public LobbyProtectionSettings getProtection() {
+        return protection;
+    }
+
+    /**
+     * Actualiza una proteccion, la aplica de inmediato y la persiste.
+     *
+     * @param key   proteccion.
+     * @param value "true" o "false".
+     * @return true si se actualizo.
+     */
+    public boolean setProtection(String key, String value) {
+        if (!protection.applySetting(key, value)) {
+            return false;
+        }
+        ConfigurationFile file = configManager.getFile(FILE);
+        protection.save(file.get());
+        file.save();
+        return true;
+    }
+
+    /**
+     * Indica si la posicion esta dentro de la region protegida.
+     *
+     * @param location posicion a evaluar.
+     * @return true si hay region y la contiene.
+     */
+    public boolean isInsideRegion(Location location) {
+        if (region == null || location.getWorld() == null
+                || region.getWorld() == null
+                || !region.getWorld().equals(location.getWorld())) {
+            return false;
+        }
+        int x = location.getBlockX();
+        int y = location.getBlockY();
+        int z = location.getBlockZ();
+        return x >= region.getMinX() && x <= region.getMaxX()
+                && y >= region.getMinY() && y <= region.getMaxY()
+                && z >= region.getMinZ() && z <= region.getMaxZ();
+    }
+
+    /**
+     * Indica si un jugador debe recibir las protecciones del lobby:
+     * dentro de la region y sin estar participando en un evento (los
+     * participantes quedan a cargo de las reglas de su evento).
+     *
+     * @param player jugador a evaluar.
+     * @return true si las protecciones aplican.
+     */
+    public boolean shouldProtect(Player player) {
+        return !participantCheck.test(player.getUniqueId()) && isInsideRegion(player.getLocation());
+    }
+
+    /**
+     * Indica si el jugador esta participando en un evento (en cuyo
+     * caso las redes del lobby global no intervienen).
+     *
+     * @param playerId identificador del jugador.
+     * @return true si participa de una sesion activa.
+     */
+    public boolean isParticipant(java.util.UUID playerId) {
+        return participantCheck.test(playerId);
     }
 
     /**

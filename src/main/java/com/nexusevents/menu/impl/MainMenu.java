@@ -42,6 +42,10 @@ public final class MainMenu extends Menu {
             inventory.setItem(16, MenuItems.item(XMaterial.IRON_SWORD, "<red><bold>Moderación",
                     "<gray>Descalificar, teletransportar", "<gray>eliminados y modo torneo."));
         }
+        if (player.hasPermission(Permissions.setup("mainlobby"))) {
+            inventory.setItem(4, MenuItems.item(XMaterial.BEACON, "<gold><bold>Lobby Global",
+                    "<gray>Spawn, región protegida,", "<gray>altura mínima y protecciones."));
+        }
         inventory.setItem(22, MenuItems.close());
         MenuItems.fillBorder(inventory);
     }
@@ -49,6 +53,11 @@ public final class MainMenu extends Menu {
     @Override
     public void onClick(Player player, int slot, ClickType click, MenuService menus) {
         switch (slot) {
+            case 4:
+                if (player.hasPermission(Permissions.setup("mainlobby"))) {
+                    menus.open(player, new MainLobbyMenu());
+                }
+                break;
             case 10:
                 menus.open(player, new EventsMenu());
                 break;

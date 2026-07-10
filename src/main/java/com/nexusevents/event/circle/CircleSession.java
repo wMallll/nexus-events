@@ -82,6 +82,7 @@ public final class CircleSession extends EventSession {
         this.center = resolvePoint(ArenaKeys.CIRCLE_CENTER);
         if (center == null || center.getWorld() == null) {
             context.getPlugin().getLogger().severe("circle: el centro del circulo no esta disponible. Se cancela.");
+            broadcast("event.circle.setup-error-center");
             end(EventEndReason.CANCELLED);
             return;
         }
@@ -95,6 +96,8 @@ public final class CircleSession extends EventSession {
         if (blocks.isEmpty()) {
             context.getPlugin().getLogger().severe("circle: no se encontraron bloques dentro del radio "
                     + radius + ". Se cancela.");
+            broadcast("event.circle.setup-error-floor",
+                    Placeholder.unparsed("radius", String.valueOf(radius)));
             end(EventEndReason.CANCELLED);
             return;
         }

@@ -30,8 +30,11 @@ settings:
   fall-distance: 5
 
   # Capas verticales escaneadas alrededor del centro para
-  # capturar el piso (hacia abajo y hacia arriba de tus pies).
-  vertical-scan-down: 3
+  # capturar el piso (hacia abajo y hacia arriba de tus pies al
+  # ejecutar /evento setcircle). Si al iniciar dice que no
+  # encontro bloques, subi vertical-scan-down o re-ejecuta
+  # setcircle parado SOBRE el piso.
+  vertical-scan-down: 5
   vertical-scan-up: 0
 
 # Bolas de nieve entregadas al comenzar: 'stacks' slots con

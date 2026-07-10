@@ -104,7 +104,7 @@ public final class CircleConfig {
                 TimeUtil.parseSeconds(file.getString("settings.max-duration", ""), 300),
                 Math.max(3, file.getInt("settings.default-radius", 30)),
                 Math.max(1, file.getInt("settings.fall-distance", 5)),
-                Math.max(0, file.getInt("settings.vertical-scan-down", 3)),
+                Math.max(0, file.getInt("settings.vertical-scan-down", 5)),
                 Math.max(0, file.getInt("settings.vertical-scan-up", 0)),
                 file.getBoolean("snowballs.enabled", true),
                 Math.max(0, file.getInt("snowballs.stacks", 5)),

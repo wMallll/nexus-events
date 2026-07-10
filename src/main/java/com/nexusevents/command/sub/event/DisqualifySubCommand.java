@@ -3,6 +3,7 @@ package com.nexusevents.command.sub.event;
 import com.nexusevents.command.SubCommand;
 import com.nexusevents.event.EventManager;
 import com.nexusevents.event.EventSession;
+import com.nexusevents.lockout.LockoutService;
 import com.nexusevents.message.MessageService;
 import com.nexusevents.permission.Permissions;
 import com.nexusevents.sound.SoundService;
@@ -25,12 +26,15 @@ import java.util.UUID;
 public final class DisqualifySubCommand extends SubCommand {
 
     private final EventManager eventManager;
+    private final LockoutService lockouts;
     private final MessageService messages;
     private final SoundService sounds;
 
-    public DisqualifySubCommand(EventManager eventManager, MessageService messages, SoundService sounds) {
+    public DisqualifySubCommand(EventManager eventManager, LockoutService lockouts,
+                                MessageService messages, SoundService sounds) {
         super("disqualify", Permissions.DISQUALIFY, "/evento disqualify (jugador)", "descalificar", "dq");
         this.eventManager = eventManager;
+        this.lockouts = lockouts;
         this.messages = messages;
         this.sounds = sounds;
     }
@@ -51,9 +55,18 @@ public final class DisqualifySubCommand extends SubCommand {
         }
         EventSession session = eventManager.getSessionByPlayer(target.getUniqueId()).orElse(null);
         if (session == null) {
-            messages.send(sender, "moderation.not-in-event",
+            // Sin evento activo: descalificacion directa al modo torneo.
+            if (!lockouts.isEnabled()) {
+                messages.send(sender, "moderation.no-event-no-lockout",
+                        Placeholder.unparsed("player", target.getName()));
+                sounds.play(sender, "command-error");
+                return;
+            }
+            lockouts.lock(target);
+            messages.send(sender, "moderation.locked-outside",
                     Placeholder.unparsed("player", target.getName()));
-            sounds.play(sender, "command-error");
+            messages.send(target, "moderation.locked-outside-target");
+            sounds.play(sender, "command-success");
             return;
         }
         if (!session.isAlive(target.getUniqueId())) {

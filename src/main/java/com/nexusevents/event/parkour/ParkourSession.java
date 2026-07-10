@@ -117,6 +117,7 @@ public final class ParkourSession extends EventSession {
         if (islands.isEmpty()) {
             context.getPlugin().getLogger().severe(
                     "parkour: la arena no tiene fragmentos (/evento parkour). Se cancela.");
+            broadcast("event.parkour.setup-error");
             end(EventEndReason.CANCELLED);
             return;
         }
@@ -316,6 +317,7 @@ public final class ParkourSession extends EventSession {
             }
         });
         for (Player player : fallen) {
+            broadcast("event.parkour.fell", Placeholder.unparsed("player", player.getName()));
             eliminate(player);
         }
     }

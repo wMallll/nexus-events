@@ -348,6 +348,7 @@ public abstract class EventSession {
             }
             if (player != null && player.isOnline()) {
                 snapshot.restore(player);
+                teleportToExit(player);
             } else {
                 // El jugador esta offline (desconexion involuntaria): su
                 // estado se restaurara en su proximo ingreso al servidor.
@@ -442,6 +443,19 @@ public abstract class EventSession {
         PlayerSnapshot snapshot = snapshots.remove(player.getUniqueId());
         if (snapshot != null && player.isOnline()) {
             snapshot.restore(player);
+            teleportToExit(player);
+        }
+    }
+
+    /**
+     * Destino de salida de la sesion: el lobby del evento (con su
+     * variante por evento si existe). Nunca la posicion previa al
+     * ingreso, que podia estar en otro mundo y rompia el estado.
+     */
+    private void teleportToExit(Player player) {
+        Location exit = resolveEventPoint(ArenaKeys.LOBBY);
+        if (exit != null) {
+            player.teleport(exit);
         }
     }
 
@@ -717,6 +731,9 @@ public abstract class EventSession {
      * @param player jugador eliminado.
      */
     protected final void applySpectatorState(Player player) {
+        // La caida acumulada se descarta: un espectador recien
+        // teletransportado no debe recibir el golpe pendiente.
+        player.setFallDistance(0.0F);
         player.setAllowFlight(true);
         player.setFlying(true);
         player.setCollidable(false);

@@ -5,6 +5,7 @@ import com.nexusevents.arena.ArenaKeys;
 import com.nexusevents.arena.ArenaLocation;
 import com.nexusevents.arena.ArenaManager;
 import com.nexusevents.configuration.ConfigManager;
+import com.nexusevents.lobby.MainLobbyService;
 import com.nexusevents.lockout.LockoutService;
 import com.nexusevents.manager.Manager;
 import com.nexusevents.manager.Reloadable;
@@ -48,14 +49,17 @@ public final class EventManager implements Manager, Reloadable {
     private final Map<UUID, PlayerSnapshot> orphanRestores = new HashMap<>();
     private final Map<UUID, EventSession> playerIndex = new HashMap<>();
 
+    private final MainLobbyService mainLobby;
+
     private EventSettings settings;
 
     public EventManager(JavaPlugin plugin, ConfigManager configManager, TaskScheduler scheduler,
                         MessageService messages, TitleService titles, SoundService sounds,
                         ScoreboardTemplateRegistry scoreboards, ArenaManager arenas,
-                        LockoutService lockouts) {
+                        LockoutService lockouts, MainLobbyService mainLobby) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.mainLobby = mainLobby;
         this.context = new EventContext(plugin, configManager, scheduler, messages, titles, sounds,
                 scoreboards, arenas, lockouts, this);
     }
@@ -296,6 +300,7 @@ public final class EventManager implements Manager, Reloadable {
         PlayerSnapshot pending = orphanRestores.remove(player.getUniqueId());
         if (pending != null) {
             pending.restore(player);
+            mainLobby.getLobby().ifPresent(player::teleport);
             context.getMessages().send(player, "event.restored-late");
             return;
         }

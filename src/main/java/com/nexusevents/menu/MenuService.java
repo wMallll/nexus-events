@@ -2,6 +2,7 @@ package com.nexusevents.menu;
 
 import com.nexusevents.arena.ArenaManager;
 import com.nexusevents.event.EventManager;
+import com.nexusevents.lobby.MainLobbyService;
 import com.nexusevents.lockout.LockoutService;
 import com.nexusevents.manager.Manager;
 import com.nexusevents.message.MessageService;
@@ -37,12 +38,13 @@ public final class MenuService implements Manager {
     private final EventManager events;
     private final WorldService worlds;
     private final LockoutService lockouts;
+    private final MainLobbyService mainLobby;
 
     private final Map<UUID, Consumer<String>> prompts = new HashMap<>();
 
     public MenuService(JavaPlugin plugin, TaskScheduler scheduler, MessageService messages,
                        ArenaManager arenas, EventManager events, WorldService worlds,
-                       LockoutService lockouts) {
+                       LockoutService lockouts, MainLobbyService mainLobby) {
         this.plugin = plugin;
         this.scheduler = scheduler;
         this.messages = messages;
@@ -50,6 +52,7 @@ public final class MenuService implements Manager {
         this.events = events;
         this.worlds = worlds;
         this.lockouts = lockouts;
+        this.mainLobby = mainLobby;
     }
 
     @Override
@@ -161,5 +164,9 @@ public final class MenuService implements Manager {
 
     public LockoutService getLockouts() {
         return lockouts;
+    }
+
+    public MainLobbyService getMainLobby() {
+        return mainLobby;
     }
 }

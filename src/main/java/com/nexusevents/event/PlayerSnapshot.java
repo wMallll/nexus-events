@@ -82,7 +82,12 @@ public final class PlayerSnapshot {
         player.setAllowFlight(allowFlight);
         player.setFlying(allowFlight && flying);
         player.setCollidable(collidable);
-        player.teleport(location);
+        // La POSICION no se restaura a proposito: volver al punto
+        // previo (posiblemente en otro mundo) interrumpia el flujo y
+        // arrastraba estados. El destino de salida lo decide quien
+        // restaura: las sesiones llevan al lobby del evento y los
+        // restores tardios, al lobby global.
+        player.setFallDistance(0.0F);
     }
 
     private static void clearEffects(Player player) {

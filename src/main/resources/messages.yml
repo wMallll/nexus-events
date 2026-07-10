@@ -72,7 +72,7 @@ event:
     hide-and-seek: "Escondete si puedes"
     pixel-party: "Pixel Party"
     parkour: "Parkour Colapsable"
-    circle: "El Círculo"
+    circle: "<gradient:#FF1744:#FF9100>El Círculo</gradient>"
   states:
     waiting: "Esperando"
     countdown: "Comenzando"
@@ -147,6 +147,8 @@ event:
       - ""
   parkour:
     islands-info: "<prefix><gray>Recorrido de <yellow><count></yellow> islas: caen en orden, ¡no te quedes atrás!"
+    fell: "<prefix><red><player></red> <gray>cayó al vacío."
+    setup-error: "<prefix><red>El Parkour se canceló: la arena no tiene fragmentos. Armalos con <gray>/evento parkour</gray>."
     collapse-start: "<prefix><red><bold>¡Las islas empezaron a desintegrarse!"
     island-collapsed: "<prefix><gray>La isla <yellow>#<island></yellow> se desintegró por completo."
     long-pause: "<prefix><gold>Pausa: <gray>la isla <yellow>#<island></yellow> se desintegrará en <yellow><time></yellow>."
@@ -160,6 +162,8 @@ event:
   circle:
     start: "<prefix><red><bold>¡PvP activado!</bold> <gray>Empujá a los demás al vacío con las bolas de nieve."
     breaking-start: "<prefix><red>¡El piso empezó a romperse! Mirá dónde pisás."
+    setup-error-center: "<prefix><red>El Círculo se canceló: el centro no está disponible (¿mundo descargado?). Re-ejecutá <gray>/evento setcircle (radio)</gray>."
+    setup-error-floor: "<prefix><red>El Círculo se canceló: no se encontraron bloques del piso dentro del radio <yellow><radius></yellow>. Ejecutá <gray>/evento setcircle</gray> parado SOBRE el piso, o subí <gray>vertical-scan-down</gray> en circle.yml."
     eliminated-info:
       - "<prefix><red>¡Caíste al vacío! Quedaste eliminado."
       - "<prefix><gray>Ahora sos invisible y podés volar para mirar el evento."
@@ -199,6 +203,7 @@ help:
     dqstick: "Te da el Palo Descalificador."
     lockout: "Controla el modo torneo: on, off o clear."
     setminy: "Fija la altura mínima de seguridad (tu Y actual)."
+    mainlobby: "Región protegida y protecciones del lobby global."
     start: "Inicia un evento en una arena."
     stop: "Detiene un evento activo."
     join: "Entrá a un evento activo."
@@ -277,6 +282,9 @@ moderation:
   stick-given: "<prefix><green>Recibiste el <red><bold>Descalificador</bold></red>. Golpeá a un participante vivo para descalificarlo."
   stick-no-permission: "<prefix><red>No tenés permiso para usar el Descalificador."
   stick-not-participant: "<prefix><red><player> no es un participante vivo de ningún evento."
+  locked-outside: "<prefix><green>Descalificaste a <yellow><player></yellow>: quedó registrado en el modo torneo."
+  locked-outside-target: "<prefix><red>Fuiste descalificado del torneo por un moderador."
+  no-event-no-lockout: "<prefix><red><player> no está en ningún evento y el modo torneo está desactivado. Activálo con <gray>/evento lockout on</gray> para descalificar fuera de eventos."
 
 # --- Menus ---
 menu:
@@ -284,3 +292,24 @@ menu:
   prompt-world-name: "<prefix><yellow>Escribí en el chat el <bold>nombre del mundo</bold> a crear (letras, números, - y _). Escribí <red>cancelar</red> para abortar."
   prompt-arena-name: "<prefix><yellow>Escribí en el chat el <bold>nombre de la arena</bold> a crear. Escribí <red>cancelar</red> para abortar."
   prompt-cancelled: "<prefix><gray>Acción cancelada."
+
+# --- Lobby global (region y protecciones) ---
+mainlobby:
+  usage:
+    - "<prefix><gray>Lobby global:"
+    - " <dark_gray>• <yellow>/evento mainlobby pos1 <dark_gray>y <yellow>pos2 <gray>(la región se guarda con ambas)"
+    - " <dark_gray>• <yellow>/evento mainlobby set (opción) (true|false) <dark_gray>· <yellow>removeregion"
+    - " <dark_gray>• <yellow>/evento mainlobby setminy <dark_gray>· <yellow>info"
+  pos-set: "<prefix><green>Posición <yellow><corner></yellow> de la región marcada en tu ubicación."
+  different-worlds: "<prefix><red>Las dos posiciones deben estar en el mismo mundo."
+  region-set: "<prefix><green>Región del lobby global definida (<dimensions>). Las protecciones ya están activas adentro."
+  region-removed: "<prefix><yellow>Región del lobby global eliminada: las protecciones dejan de actuar."
+  set-usage: "<prefix><red>Usá: <gray>/evento mainlobby set (opción) (true|false)</gray>. Opciones: <yellow><options></yellow>."
+  setting-updated: "<prefix><green>Lobby global: <gray><setting></gray> = <yellow><value></yellow> (aplicado y guardado)."
+  info-header: "<prefix><gray><bold>Lobby global:"
+  info-spawn: " <dark_gray>• <gray>Spawn: <state>"
+  info-region: " <dark_gray>• <gray>Región: <state>"
+  info-miny: " <dark_gray>• <gray>Altura mínima: <state>"
+  info-protection: " <dark_gray>• <gray><setting>: <state>"
+  state-set: "<green>definido"
+  state-unset: "<red>sin definir"

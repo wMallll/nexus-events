@@ -72,6 +72,10 @@ public final class Permissions {
     /** Recibir y usar el Palo Descalificador. */
     public static final String DQ_STICK = "evento.dqstick";
 
+    /** Exencion de las protecciones de construccion e interaccion del
+     * lobby global. */
+    public static final String MAINLOBBY_BYPASS = "evento.mainlobby.bypass";
+
     /**
      * Construye el nodo de permiso de un comando de setup concreto
      * (por ejemplo {@code evento.setup.setspawn}).

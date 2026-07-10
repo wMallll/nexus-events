@@ -47,6 +47,7 @@ permissions:
       evento.setup.save: true
       evento.setup.setmainlobby: true
       evento.setup.setminy: true
+      evento.setup.mainlobby: true
       evento.lockout: true
       evento.start: true
       evento.stop: true
@@ -115,6 +116,12 @@ permissions:
     default: op
   evento.setup.setminy:
     description: Permite fijar la altura minima de seguridad.
+    default: op
+  evento.setup.mainlobby:
+    description: Permite configurar la region y protecciones del lobby global.
+    default: op
+  evento.mainlobby.bypass:
+    description: Exime de las protecciones de construccion e interaccion del lobby global.
     default: op
   evento.lockout:
     description: Permite controlar el modo torneo (bloqueo de eliminados).
