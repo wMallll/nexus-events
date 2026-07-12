@@ -204,6 +204,8 @@ help:
     lockout: "Controla el modo torneo: on, off o clear."
     setminy: "Fija la altura mínima de seguridad (tu Y actual)."
     mainlobby: "Región protegida y protecciones del lobby global."
+    lobbyzone: "Zonas de lobby protegidas por evento y arena."
+    collision: "Activa o desactiva la colisión entre jugadores en todo el servidor."
     start: "Inicia un evento en una arena."
     stop: "Detiene un evento activo."
     join: "Entrá a un evento activo."
@@ -313,3 +315,32 @@ mainlobby:
   info-protection: " <dark_gray>• <gray><setting>: <state>"
   state-set: "<green>definido"
   state-unset: "<red>sin definir"
+
+# --- Zonas de lobby por arena ---
+lobbyzone:
+  usage:
+    - "<prefix><gray>Zonas de lobby (por evento y arena, con fallback <yellow>general</yellow>):"
+    - " <dark_gray>• <yellow>/evento lobbyzone (evento|general) (arena) pos1 <dark_gray>y <yellow>pos2 <gray>(se guarda con ambas)"
+    - " <dark_gray>• <yellow>/evento lobbyzone (evento|general) (arena) set (opción) (true|false)"
+    - " <dark_gray>• <yellow>/evento lobbyzone (evento|general) (arena) removeregion <dark_gray>· <yellow>info"
+    - " <dark_gray>Ejemplo: <gray>/evento lobbyzone parkour test pos1"
+  pos-set: "<prefix><green>Posición <yellow><corner></yellow> de la zona <yellow><scope></yellow> de <yellow><arena></yellow> marcada en tu ubicación."
+  different-worlds: "<prefix><red>Las dos posiciones deben estar en el mismo mundo."
+  region-set: "<prefix><green>Zona <yellow><scope></yellow> de <yellow><arena></yellow> definida (<dimensions>). Las protecciones ya están activas adentro."
+  region-removed: "<prefix><yellow>Zona <yellow><scope></yellow> de <yellow><arena></yellow> eliminada."
+  no-region: "<prefix><red>La arena <yellow><arena></yellow> no tiene zona <yellow><scope></yellow>. Marcala con <gray>pos1</gray> y <gray>pos2</gray>."
+  set-usage: "<prefix><red>Usá: <gray>/evento lobbyzone set (opción) (true|false)</gray>. Opciones: <yellow><options></yellow>."
+  setting-updated: "<prefix><green>Zona <yellow><scope></yellow> de <yellow><arena></yellow>: <gray><setting></gray> = <yellow><value></yellow> (aplicado y guardado)."
+  info-header: "<prefix><gray><bold>Zona <scope> de <yellow><arena></yellow>:"
+  invalid-scope: "<prefix><red>Alcance inválido: <yellow><scope></yellow>. Usá un id de evento (<gray>/evento events</gray>) o <yellow>general</yellow>."
+  scope-general: "General de la arena"
+  info-region: " <dark_gray>• <gray>Región: <state>"
+
+# --- Colision global ---
+collision:
+  usage: "<prefix><red>Usá: <gray>/evento collision (on|off)"
+  disabled: "<prefix><gold>Colisión entre jugadores <red>DESACTIVADA</red> en todo el servidor: ahora se atraviesan."
+  enabled: "<prefix><gold>Colisión entre jugadores <green>ACTIVADA</green> en todo el servidor."
+  status: "<prefix><gray>Colisión del servidor: <state>"
+  state-on: "<green>activada"
+  state-off: "<red>desactivada (los jugadores se atraviesan)"

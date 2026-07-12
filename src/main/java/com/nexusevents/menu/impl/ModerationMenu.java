@@ -46,6 +46,15 @@ public final class ModerationMenu extends Menu {
             inventory.setItem(14, MenuItems.item(XMaterial.NAME_TAG, "<red><bold>Descalificar...",
                     "<gray>Elegí al jugador de la lista."));
         }
+        if (player.hasPermission(Permissions.COLLISION)) {
+            boolean disabled = menus.getCollision().isDisabled();
+            inventory.setItem(22, MenuItems.item(
+                    disabled ? XMaterial.SLIME_BALL : XMaterial.LEAD,
+                    "<gold><bold>Colisión del servidor",
+                    "<gray>Estado: " + (disabled
+                            ? "<red>DESACTIVADA <gray>(se atraviesan)" : "<green>activada"),
+                    "<yellow>Click: alternar en TODO el servidor"));
+        }
         if (player.hasPermission(Permissions.LOCKOUT)) {
             boolean enabled = menus.getLockouts().isEnabled();
             inventory.setItem(16, MenuItems.item(
@@ -74,6 +83,13 @@ public final class ModerationMenu extends Menu {
                 break;
             case 16:
                 lockoutFlow(player, click, menus);
+                break;
+            case 22:
+                if (player.hasPermission(Permissions.COLLISION)) {
+                    player.performCommand("evento collision "
+                            + (menus.getCollision().isDisabled() ? "on" : "off"));
+                    menus.reopenLater(player, new ModerationMenu(), 2L);
+                }
                 break;
             case 31:
                 menus.open(player, new MainMenu());

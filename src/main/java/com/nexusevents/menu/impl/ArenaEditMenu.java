@@ -82,6 +82,9 @@ public final class ArenaEditMenu extends Menu {
         inventory.setItem(35, MenuItems.item(XMaterial.TNT, "<red>Parkour: Limpiar todo",
                 "<gray>Borra los " + fragments + " fragmentos."));
 
+        inventory.setItem(38, MenuItems.item(XMaterial.SHIELD, "<gold>Zona de lobby",
+                "<gray>Región protegida de esta arena:",
+                "<gray>daño, hambre, PvP, colisión y más."));
         inventory.setItem(40, MenuItems.item(XMaterial.BOOK, "<green><bold>Guardar arenas"));
         inventory.setItem(44, MenuItems.item(XMaterial.LAVA_BUCKET,
                 confirmDelete ? "<dark_red><bold>¿SEGURO? Click de nuevo" : "<red><bold>Eliminar arena",
@@ -140,6 +143,9 @@ public final class ArenaEditMenu extends Menu {
                 break;
             case 35:
                 run(player, menus, "evento parkour clear");
+                break;
+            case 38:
+                menus.open(player, new LobbyZoneMenu(arenaName));
                 break;
             case 40:
                 run(player, menus, "evento save");

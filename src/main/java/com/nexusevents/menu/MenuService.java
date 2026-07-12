@@ -2,10 +2,12 @@ package com.nexusevents.menu;
 
 import com.nexusevents.arena.ArenaManager;
 import com.nexusevents.event.EventManager;
+import com.nexusevents.lobby.LobbyZoneService;
 import com.nexusevents.lobby.MainLobbyService;
 import com.nexusevents.lockout.LockoutService;
 import com.nexusevents.manager.Manager;
 import com.nexusevents.message.MessageService;
+import com.nexusevents.moderation.CollisionService;
 import com.nexusevents.scheduler.TaskScheduler;
 import com.nexusevents.util.TextUtil;
 import com.nexusevents.world.WorldService;
@@ -39,12 +41,15 @@ public final class MenuService implements Manager {
     private final WorldService worlds;
     private final LockoutService lockouts;
     private final MainLobbyService mainLobby;
+    private final LobbyZoneService lobbyZones;
+    private final CollisionService collision;
 
     private final Map<UUID, Consumer<String>> prompts = new HashMap<>();
 
     public MenuService(JavaPlugin plugin, TaskScheduler scheduler, MessageService messages,
                        ArenaManager arenas, EventManager events, WorldService worlds,
-                       LockoutService lockouts, MainLobbyService mainLobby) {
+                       LockoutService lockouts, MainLobbyService mainLobby,
+                       LobbyZoneService lobbyZones, CollisionService collision) {
         this.plugin = plugin;
         this.scheduler = scheduler;
         this.messages = messages;
@@ -53,6 +58,8 @@ public final class MenuService implements Manager {
         this.worlds = worlds;
         this.lockouts = lockouts;
         this.mainLobby = mainLobby;
+        this.lobbyZones = lobbyZones;
+        this.collision = collision;
     }
 
     @Override
@@ -168,5 +175,13 @@ public final class MenuService implements Manager {
 
     public MainLobbyService getMainLobby() {
         return mainLobby;
+    }
+
+    public LobbyZoneService getLobbyZones() {
+        return lobbyZones;
+    }
+
+    public CollisionService getCollision() {
+        return collision;
     }
 }

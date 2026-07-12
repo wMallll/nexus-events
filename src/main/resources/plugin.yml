@@ -48,6 +48,8 @@ permissions:
       evento.setup.setmainlobby: true
       evento.setup.setminy: true
       evento.setup.mainlobby: true
+      evento.setup.lobbyzone: true
+      evento.collision: true
       evento.lockout: true
       evento.start: true
       evento.stop: true
@@ -119,6 +121,12 @@ permissions:
     default: op
   evento.setup.mainlobby:
     description: Permite configurar la region y protecciones del lobby global.
+    default: op
+  evento.setup.lobbyzone:
+    description: Permite configurar la zona de lobby protegida de cada arena.
+    default: op
+  evento.collision:
+    description: Permite alternar la colision entre jugadores en todo el servidor.
     default: op
   evento.mainlobby.bypass:
     description: Exime de las protecciones de construccion e interaccion del lobby global.

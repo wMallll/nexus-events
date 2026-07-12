@@ -12,6 +12,7 @@ import com.nexusevents.command.sub.arena.ListArenasSubCommand;
 import com.nexusevents.command.sub.arena.SelectArenaSubCommand;
 import com.nexusevents.command.sub.event.EventsSubCommand;
 import com.nexusevents.command.sub.event.JoinEventSubCommand;
+import com.nexusevents.command.sub.event.CollisionSubCommand;
 import com.nexusevents.command.sub.event.DisqualifyStickSubCommand;
 import com.nexusevents.command.sub.event.DisqualifySubCommand;
 import com.nexusevents.command.sub.event.LockoutSubCommand;
@@ -23,6 +24,7 @@ import com.nexusevents.command.sub.event.StopEventSubCommand;
 import com.nexusevents.command.sub.setup.SaveSubCommand;
 import com.nexusevents.command.sub.setup.ParkourSetupSubCommand;
 import com.nexusevents.command.sub.setup.SetCircleSubCommand;
+import com.nexusevents.command.sub.setup.LobbyZoneSubCommand;
 import com.nexusevents.command.sub.setup.MainLobbySetupSubCommand;
 import com.nexusevents.command.sub.setup.SetMainLobbySubCommand;
 import com.nexusevents.command.sub.setup.SetMinYSubCommand;
@@ -36,12 +38,15 @@ import com.nexusevents.event.hideandseek.HideAndSeekEvent;
 import com.nexusevents.event.parkour.ParkourEvent;
 import com.nexusevents.event.pixelparty.PixelPartyEvent;
 import com.nexusevents.lobby.MainLobbyService;
+import com.nexusevents.lobby.LobbyZoneService;
+import com.nexusevents.moderation.CollisionService;
 import com.nexusevents.lockout.LockoutService;
 import com.nexusevents.command.sub.world.WorldSubCommand;
 import com.nexusevents.world.WorldService;
 import com.nexusevents.listener.EventProtectionListener;
 import com.nexusevents.listener.DisqualifyListener;
 import com.nexusevents.listener.LockoutListener;
+import com.nexusevents.listener.LobbyZoneListener;
 import com.nexusevents.listener.MainLobbyListener;
 import com.nexusevents.menu.MenuListener;
 import com.nexusevents.menu.MenuService;
@@ -118,6 +123,8 @@ public final class PluginBootstrap {
         MainLobbyService mainLobbyService = new MainLobbyService(plugin, configManager,
                 taskScheduler, messageService);
         LockoutService lockoutService = new LockoutService(plugin, configManager);
+        LobbyZoneService lobbyZoneService = new LobbyZoneService(plugin, configManager);
+        CollisionService collisionService = new CollisionService(plugin, configManager, taskScheduler);
         WorldService worldService = new WorldService(plugin, configManager, taskScheduler);
         CommandManager commandManager = new CommandManager(plugin, managerRegistry, messageService);
 
@@ -133,18 +140,24 @@ public final class PluginBootstrap {
 
         mainLobbyService.setParticipantCheck(playerId ->
                 eventManager.getSessionByPlayer(playerId).isPresent());
+        lobbyZoneService.setParticipantCheck(playerId ->
+                eventManager.getSessionByPlayer(playerId).isPresent());
+        collisionService.setParticipantCheck(playerId ->
+                eventManager.getSessionByPlayer(playerId).isPresent());
 
         MenuService menuService = new MenuService(plugin, taskScheduler, messageService,
-                arenaManager, eventManager, worldService, lockoutService, mainLobbyService);
+                arenaManager, eventManager, worldService, lockoutService, mainLobbyService,
+                lobbyZoneService, collisionService);
 
         registerArenaCommands(commandManager, arenaManager, eventManager, mainLobbyService,
-                messageService, soundService);
+                lobbyZoneService, messageService, soundService);
         registerEventCommands(commandManager, eventManager, lockoutService, messageService, soundService);
         commandManager.register(new WorldSubCommand(worldService, messageService, soundService));
         commandManager.register(new MenuSubCommand(menuService, messageService));
         commandManager.register(new TpDeadSubCommand(eventManager, messageService, soundService));
         commandManager.register(new DisqualifySubCommand(eventManager, lockoutService, messageService, soundService));
         commandManager.register(new DisqualifyStickSubCommand(messageService, soundService));
+        commandManager.register(new CollisionSubCommand(collisionService, messageService, soundService));
 
         managerRegistry.register(ConfigManager.class, configManager);
         managerRegistry.register(MessageService.class, messageService);
@@ -152,6 +165,8 @@ public final class PluginBootstrap {
         managerRegistry.register(ScoreboardTemplateRegistry.class, scoreboardTemplates);
         managerRegistry.register(ArenaManager.class, arenaManager);
         managerRegistry.register(MainLobbyService.class, mainLobbyService);
+        managerRegistry.register(LobbyZoneService.class, lobbyZoneService);
+        managerRegistry.register(CollisionService.class, collisionService);
         managerRegistry.register(LockoutService.class, lockoutService);
         managerRegistry.register(WorldService.class, worldService);
         managerRegistry.register(MenuService.class, menuService);
@@ -164,6 +179,7 @@ public final class PluginBootstrap {
      */
     private void registerArenaCommands(CommandManager commands, ArenaManager arenas,
                                        EventManager events, MainLobbyService mainLobby,
+                                       LobbyZoneService lobbyZones,
                                        MessageService messages, SoundService sounds) {
         commands.register(new CreateArenaSubCommand(arenas, setupSessions, messages, sounds));
         commands.register(new DeleteArenaSubCommand(arenas, setupSessions, messages, sounds));
@@ -183,6 +199,7 @@ public final class PluginBootstrap {
         commands.register(new SetMainLobbySubCommand(mainLobby, messages, sounds));
         commands.register(new SetMinYSubCommand(arenas, setupSessions, events, mainLobby, messages, sounds));
         commands.register(new MainLobbySetupSubCommand(mainLobby, messages, sounds));
+        commands.register(new LobbyZoneSubCommand(lobbyZones, arenas, events, messages, sounds));
     }
 
     /**
@@ -215,6 +232,7 @@ public final class PluginBootstrap {
                 new LockoutListener(lockoutService, lockoutMessages),
                 new DisqualifyListener(eventManager, lockoutService, lockoutMessages),
                 new MainLobbyListener(mainLobbyService),
+                new LobbyZoneListener(managerRegistry.get(LobbyZoneService.class)),
                 new MenuListener(menuService)
         );
         registerIntegrations(eventManager);

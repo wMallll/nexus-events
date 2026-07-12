@@ -76,6 +76,9 @@ public final class Permissions {
      * lobby global. */
     public static final String MAINLOBBY_BYPASS = "evento.mainlobby.bypass";
 
+    /** Interruptor global de la colision entre jugadores. */
+    public static final String COLLISION = "evento.collision";
+
     /**
      * Construye el nodo de permiso de un comando de setup concreto
      * (por ejemplo {@code evento.setup.setspawn}).
